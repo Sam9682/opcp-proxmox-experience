@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Validation & Testing</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Validation & Testing</h1>
+      <p class="lesson-meta">Difficulty: <strong>Intermediate</strong> · Estimated time: <strong>20 min</strong></p>
+
+      <p>
+        After creating the VM with GPU passthrough, validation ensures everything is
+        working correctly. This lesson covers how to verify GPU visibility from both
+        the host and guest perspectives.
+      </p>
+
+      <h2>Host-Side Verification</h2>
+
+      <h3>1. IOMMU Verification</h3>
+      <pre><code class="language-bash"># Verify IOMMU is active
+dmesg | grep -i iommu
+# Look for: "DMAR: IOMMU enabled" or "AMD-Vi: IOMMU enabled"
+
+# List IOMMU groups
+find /sys/kernel/iommu_groups/ -maxdepth 1 -mindepth 1 -type d | wc -l
+# Should return > 0</code></pre>
+
+      <h3>2. VFIO Binding Verification</h3>
+      <pre><code class="language-bash"># Check each GPU device is bound to vfio-pci
+lspci -ks 41:00.0
+# Kernel driver in use: vfio-pci  ← Expected
+
+# If still showing nvidia or nouveau, VFIO binding failed
+# Check: /etc/modprobe.d/blacklist-gpu.conf
+# Check: /etc/modprobe.d/vfio.conf</code></pre>
+
+      <h3>3. VM Status</h3>
+      <pre><code class="language-bash"># Check the VM is running
+qm status 100
+# status: running
+
+# View VM configuration
+qm config 100 | grep hostpci
+# hostpci0: 41:00.0,pcie=1,x-vga=1</code></pre>
+
+      <h2>Guest-Side Verification</h2>
+      <p>
+        Once the VM is running with a guest OS installed, verify the GPU is visible inside:
+      </p>
+
+      <h3>1. PCI Device Detection</h3>
+      <pre><code class="language-bash"># Inside the VM:
+lspci | grep -i nvidia
+# 01:00.0 3D controller: NVIDIA Corporation Tesla T4</code></pre>
+
+      <h3>2. NVIDIA Driver (if installed)</h3>
+      <pre><code class="language-bash"># Install NVIDIA drivers inside the VM
+apt install -y nvidia-driver-535
+
+# Verify with nvidia-smi
+nvidia-smi
+# Should show the GPU model, temperature, memory usage</code></pre>
+
+      <h3>3. CUDA Test (optional)</h3>
+      <pre><code class="language-bash"># Install CUDA toolkit
+apt install -y nvidia-cuda-toolkit
+
+# Run a simple CUDA test
+nvcc --version
+# cuda_12.x
+
+# Run deviceQuery (if available)
+/usr/local/cuda/samples/1_Utilities/deviceQuery/deviceQuery
+# Result = PASS</code></pre>
+
+      <h2>Automated Validation</h2>
+      <p>
+        The automation tool includes a <code>VMValidator</code> class that checks
+        GPU visibility via the Proxmox QEMU agent or direct VM access:
+      </p>
+      <pre><code class="language-bash"># The automation performs:
+# 1. Check VM is running (qm status)
+# 2. Query PCI devices inside VM (via qemu-guest-agent or SSH)
+# 3. Look for NVIDIA/AMD vendor IDs in guest lspci output
+# 4. Report success/failure</code></pre>
+
+      <h2>Common Issues</h2>
+      <table>
+        <thead>
+          <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPU not visible in VM</td>
+            <td>hostpci not configured</td>
+            <td>Check <code>qm config</code> for hostpci entry</td>
+          </tr>
+          <tr>
+            <td>VM fails to start</td>
+            <td>GPU still bound to host driver</td>
+            <td>Verify <code>lspci -ks</code> shows vfio-pci</td>
+          </tr>
+          <tr>
+            <td>Code 43 error (Windows)</td>
+            <td>NVIDIA detects hypervisor</td>
+            <td>Ensure <code>hidden=1</code> CPU flag is set</td>
+          </tr>
+          <tr>
+            <td>Black screen on GPU output</td>
+            <td>BIOS not OVMF</td>
+            <td>Change BIOS to OVMF (UEFI)</td>
+          </tr>
+          <tr>
+            <td>IOMMU group conflict</td>
+            <td>Other devices in same group</td>
+            <td>Pass all devices in the group or isolate</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Performance Check</h2>
+      <p>
+        Once the GPU is working, you can benchmark to ensure near-native performance:
+      </p>
+      <pre><code class="language-bash"># Check GPU utilization during a workload
+nvidia-smi dmon -s u -d 1
+
+# Run a simple benchmark
+python3 -c "
+import torch
+x = torch.randn(10000, 10000, device='cuda')
+y = torch.matmul(x, x)
+print('GPU compute OK:', y.shape)
+"</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

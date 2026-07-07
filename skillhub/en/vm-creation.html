@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — VM Creation with GPU</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>VM Creation with GPU</h1>
+      <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>25 min</strong></p>
+
+      <p>
+        Now that GPU passthrough is configured, we create a VM in Proxmox with direct
+        GPU access. The VM uses Q35 machine type and OVMF UEFI firmware — both required
+        for PCIe passthrough.
+      </p>
+
+      <h2>VM Configuration</h2>
+      <p>Key settings for a GPU passthrough VM:</p>
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Value</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Machine type</td><td>q35</td><td>Supports PCIe passthrough natively</td></tr>
+          <tr><td>BIOS</td><td>ovmf (UEFI)</td><td>Required for GPU initialization</td></tr>
+          <tr><td>CPU type</td><td>host</td><td>Exposes all CPU features to guest</td></tr>
+          <tr><td>Memory</td><td>8192 MB</td><td>Sufficient for GPU workloads</td></tr>
+          <tr><td>Cores</td><td>4</td><td>Balanced for testing</td></tr>
+          <tr><td>SCSI controller</td><td>virtio-scsi-single</td><td>Best disk performance</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Creating the VM</h2>
+      <p>
+        The automation uses <code>qm</code> (Proxmox VM manager) to create and configure the VM:
+      </p>
+      <pre><code class="language-bash"># Create the VM
+qm create 100 \
+  --name gpu-test-vm \
+  --memory 8192 \
+  --cores 4 \
+  --machine q35 \
+  --bios ovmf \
+  --ostype l26 \
+  --net0 virtio,bridge=vmbr0 \
+  --scsihw virtio-scsi-single \
+  --scsi0 local-lvm:32,iothread=1 \
+  --efidisk0 local-lvm:1,efitype=4m</code></pre>
+
+      <h2>Attaching the GPU</h2>
+      <p>
+        The GPU is attached via the <code>hostpci</code> configuration.
+        Important flags:
+      </p>
+      <ul>
+        <li><code>pcie=1</code> — Use PCIe bus (not legacy PCI)</li>
+        <li><code>x-vga=1</code> — Mark as primary display adapter</li>
+      </ul>
+      <pre><code class="language-bash"># Attach GPU (PCI address without the 0000: domain prefix)
+qm set 100 --hostpci0 41:00.0,pcie=1,x-vga=1
+
+# Set CPU flags for passthrough compatibility
+qm set 100 --cpu host,hidden=1,flags=+pcid</code></pre>
+
+      <p>
+        The <code>hidden=1</code> flag hides KVM from the guest OS. Some NVIDIA drivers
+        refuse to load in a VM without this flag.
+      </p>
+
+      <h2>EFI Disk</h2>
+      <p>
+        OVMF requires a dedicated EFI disk for storing UEFI variables (boot entries, secure boot state):
+      </p>
+      <pre><code class="language-bash"># The efidisk0 is automatically created with:
+# --efidisk0 local-lvm:1,efitype=4m</code></pre>
+
+      <h2>Starting the VM</h2>
+      <pre><code class="language-bash"># Start the VM
+qm start 100
+
+# Check VM status
+qm status 100
+# status: running
+
+# View VM configuration
+qm config 100</code></pre>
+
+      <h2>VM Configuration Summary</h2>
+      <pre><code class="language-yaml"># Equivalent Proxmox VM config (/etc/pve/qemu-server/100.conf):
+bios: ovmf
+boot: order=scsi0
+cores: 4
+cpu: host,hidden=1,flags=+pcid
+efidisk0: local-lvm:vm-100-disk-1,efitype=4m
+hostpci0: 41:00.0,pcie=1,x-vga=1
+machine: q35
+memory: 8192
+name: gpu-test-vm
+net0: virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr0
+ostype: l26
+scsi0: local-lvm:vm-100-disk-0,iothread=1,size=32G
+scsihw: virtio-scsi-single</code></pre>
+
+      <h2>Installing a Guest OS</h2>
+      <p>
+        If an ISO is specified in the configuration, it's attached as a CD-ROM.
+        You can also attach one manually:
+      </p>
+      <pre><code class="language-bash"># Download an Ubuntu ISO to Proxmox storage
+wget -P /var/lib/vz/template/iso/ \
+  https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso
+
+# Attach to VM
+qm set 100 --cdrom local:iso/ubuntu-22.04-live-server-amd64.iso</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Introduction</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Proxmox VE GPU Passthrough sur Baremetal OVH</h1>
+
+      <p>
+        Bienvenue sur <strong>SkillHub</strong>, le compagnon de formation pratique du
+        projet <em>opcp-proxmox-install</em>. Ce parcours vous guide à travers
+        le déploiement de Proxmox VE sur des instances baremetal OVHcloud et la configuration
+        du GPU PCI passthrough pour des charges de travail VM haute performance.
+      </p>
+
+      <h2>Contexte</h2>
+      <p>
+        Vous avez accès à un projet OVHcloud OpenStack avec des nœuds baremetal (GPU).
+        À l'aide de notre outillage d'automatisation, vous allez provisionner une instance
+        basée sur Debian, installer Proxmox VE, configurer IOMMU et VFIO pour l'isolation GPU,
+        et créer une VM avec accès GPU direct — le tout automatisé via une seule commande CLI.
+      </p>
+
+      <h2>Ce que vous apprendrez</h2>
+      <p>À la fin de ce parcours de formation, vous maîtriserez :</p>
+      <ul>
+        <li><strong>Concepts fondamentaux</strong> — Architecture Proxmox VE, fondamentaux du PCI passthrough et groupes IOMMU</li>
+        <li><strong>Provisionnement Baremetal</strong> — création d'instances sur OVHcloud OpenStack avec des flavors GPU</li>
+        <li><strong>Installation Proxmox</strong> — déploiement automatisé de Proxmox VE sur Debian</li>
+        <li><strong>GPU Passthrough</strong> — configuration IOMMU, liaison driver VFIO et isolation des périphériques</li>
+        <li><strong>Création de VM</strong> — création de VMs Q35/OVMF avec périphériques hostpci GPU</li>
+        <li><strong>Validation</strong> — vérification de la visibilité GPU dans les VMs</li>
+      </ul>
+
+      <h2>Prérequis</h2>
+      <ul>
+        <li>Familiarité de base avec un terminal / ligne de commande</li>
+        <li>Python 3.9+ installé</li>
+        <li>Un projet OVHcloud Public Cloud avec accès baremetal GPU</li>
+      </ul>
+
+      <h2>Démarrage rapide</h2>
+      <p>Installez l'outil d'automatisation et lancez le workflow complet :</p>
+      <pre><code class="language-bash"># Cloner le projet
+git clone https://forgejo.example.com/opcp-proxmox-install.git
+cd opcp-proxmox-install
+
+# Installer dans un environnement virtuel
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Lancer l'automatisation (dry-run d'abord)
+proxmox-install --config config.yaml --dry-run
+
+# Exécuter le build complet
+proxmox-install --config config.yaml</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

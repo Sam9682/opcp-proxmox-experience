@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Nettoyage des ressources</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Nettoyage des ressources</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Temps estimé : <strong>10 min</strong></p>
+
+      <p>
+        Après avoir terminé la formation, nettoyez toutes les ressources créées
+        pour éviter des frais inutiles.
+      </p>
+
+      <h2>Nettoyage automatisé</h2>
+      <pre><code class="language-bash"># Lancer le nettoyage
+proxmox-install --config config.yaml --cleanup-only</code></pre>
+
+      <h2>Nettoyage manuel</h2>
+
+      <h3>1. Détruire la VM de test (sur Proxmox)</h3>
+      <pre><code class="language-bash"># Se connecter à l'hôte Proxmox
+ssh root@&lt;instance-ip&gt;
+
+# Arrêter et détruire la VM
+qm stop 100
+qm destroy 100 --purge</code></pre>
+
+      <h3>2. Supprimer l'instance OpenStack</h3>
+      <pre><code class="language-bash"># Depuis votre machine locale
+openstack server delete proxmox-gpu-node
+
+# Vérifier la suppression
+openstack server list</code></pre>
+
+      <h3>3. Nettoyer les IP flottantes</h3>
+      <pre><code class="language-bash"># Lister les IP flottantes
+openstack floating ip list
+
+# Supprimer les IP flottantes inutilisées
+openstack floating ip delete &lt;floating-ip-id&gt;</code></pre>
+
+      <h3>4. Supprimer la clé SSH (optionnel)</h3>
+      <pre><code class="language-bash"># Si vous avez créé une clé dédiée pour cette formation
+openstack keypair delete my-key</code></pre>
+
+      <h2>Ordre de nettoyage</h2>
+      <ol>
+        <li>VMs dans Proxmox</li>
+        <li>L'instance baremetal elle-même</li>
+        <li>IP flottantes</li>
+        <li>Groupes de sécurité (si des personnalisés ont été créés)</li>
+        <li>Clés SSH (optionnel)</li>
+      </ol>
+
+      <h2>Vérifier que tout est supprimé</h2>
+      <pre><code class="language-bash"># Lister tous les serveurs — devrait être vide
+openstack server list
+
+# Lister les IP flottantes
+openstack floating ip list</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

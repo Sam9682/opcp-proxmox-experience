@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Installation Proxmox VE</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Installation Proxmox VE</h1>
+      <p class="lesson-meta">Difficulté : <strong>Intermédiaire</strong> · Temps estimé : <strong>30 min</strong></p>
+
+      <p>
+        Cette leçon couvre l'installation automatisée de Proxmox VE sur un système Debian 12.
+        L'installeur configure le hostname, ajoute le dépôt Proxmox, installe les paquets,
+        définit le mot de passe root et prépare le système pour le GPU passthrough.
+      </p>
+
+      <h2>1. Configuration du hostname</h2>
+      <pre><code class="language-bash"># Définir le hostname
+hostnamectl set-hostname proxmox
+
+# Configurer /etc/hosts
+echo "127.0.0.1 localhost
+192.168.1.100 proxmox.local proxmox" > /etc/hosts</code></pre>
+
+      <h2>2. Ajout du dépôt Proxmox</h2>
+      <pre><code class="language-bash"># Ajouter la clé GPG
+wget -qO /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg \
+  http://download.proxmox.com/debian/proxmox-release-bookworm.gpg
+
+# Ajouter le dépôt (no-subscription pour la formation)
+echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+  > /etc/apt/sources.list.d/pve-install-repo.list
+
+# Mettre à jour les listes de paquets
+apt-get update</code></pre>
+
+      <h2>3. Installation des paquets Proxmox</h2>
+      <pre><code class="language-bash"># Installation non-interactive
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  proxmox-ve \
+  postfix \
+  open-iscsi \
+  chrony</code></pre>
+
+      <h2>4. Mot de passe root</h2>
+      <p>
+        Un mot de passe root est défini pour l'accès à l'interface Web Proxmox.
+        S'il n'est pas spécifié dans la config, un mot de passe aléatoire sécurisé de 20 caractères est généré.
+      </p>
+      <pre><code class="language-bash"># Définir le mot de passe root
+echo "root:VotreMotDePasseSecurise" | chpasswd</code></pre>
+
+      <h2>5. Configuration du noyau</h2>
+      <pre><code class="language-bash"># Supprimer le noyau Debian par défaut
+apt-get remove -y linux-image-amd64 'linux-image-6.1*' || true
+
+# Mettre à jour GRUB
+update-grub</code></pre>
+
+      <h2>6. Redémarrage</h2>
+      <p>
+        Après l'installation, le système redémarre sur le noyau Proxmox.
+        L'automatisation attend et se reconnecte via SSH (en tant que <code>root</code>).
+      </p>
+
+      <h2>7. Vérification</h2>
+      <pre><code class="language-bash"># Vérifier la version Proxmox
+pveversion
+
+# Vérifier les services critiques
+systemctl is-active pve-cluster   # active
+systemctl is-active pvedaemon     # active
+systemctl is-active pveproxy      # active</code></pre>
+
+      <h2>Options de configuration Proxmox</h2>
+      <table>
+        <thead>
+          <tr><th>Option</th><th>Défaut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>version</td><td>8.2</td><td>Version Proxmox VE à installer</td></tr>
+          <tr><td>enterprise_repo</td><td>false</td><td>Utiliser le dépôt entreprise (nécessite abonnement)</td></tr>
+          <tr><td>root_password</td><td>auto-généré</td><td>Mot de passe root pour l'interface web</td></tr>
+          <tr><td>storage_type</td><td>local-lvm</td><td>Backend de stockage par défaut</td></tr>
+          <tr><td>network_bridge</td><td>vmbr0</td><td>Bridge réseau pour les VMs</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Accès à l'interface Web</h2>
+      <pre><code class="language-bash">https://&lt;instance-ip&gt;:8006</code></pre>
+      <p>Connectez-vous avec <code>root</code> et le mot de passe configuré.</p>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

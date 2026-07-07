@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Prerequisites</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Prerequisites</h1>
+      <p class="lesson-meta">Difficulty: <strong>Beginner</strong> · Estimated time: <strong>15 min</strong></p>
+
+      <p>
+        Before running the automation, make sure your environment meets the following
+        requirements. This page walks you through each dependency and how to verify it.
+      </p>
+
+      <h2>1. Bash Environment</h2>
+      <p>All exercises require a Bash environment. You can use:</p>
+      <ul>
+        <li>GNU/Linux distributions (Ubuntu, Debian, CentOS, etc.)</li>
+        <li>macOS</li>
+        <li>Windows with WSL (Ubuntu recommended)</li>
+      </ul>
+      <pre><code class="language-bash"># If on Windows, install WSL Ubuntu
+wsl --install -d Ubuntu</code></pre>
+
+      <h2>2. Python 3.9+</h2>
+      <p>The automation tool requires Python 3.9 or higher:</p>
+      <pre><code class="language-bash"># Check Python version
+python3 --version
+
+# Install pip if needed
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv</code></pre>
+
+      <h2>3. OpenStack CLI Client</h2>
+      <p>
+        The provisioning step uses the OpenStack SDK. Install it via pip:
+      </p>
+      <pre><code class="language-bash"># Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install the project (includes openstacksdk dependency)
+pip install -e .
+
+# Verify OpenStack SDK is available
+python3 -c "import openstack; print(openstack.__version__)"</code></pre>
+
+      <h2>4. OpenStack Credentials</h2>
+      <p>
+        You need application credentials for your OVHcloud OpenStack project.
+        Create a <code>config.yaml</code> file with your credentials:
+      </p>
+      <pre><code class="language-yaml">openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+  application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
+
+instance:
+  base_image_name: "Debian 12"
+  flavor_name: "b3-8"
+  ssh_key_name: "my-key"
+  ssh_key_path: "~/.ssh/id_rsa"</code></pre>
+
+      <h2>5. SSH Key Pair</h2>
+      <p>You need an SSH key pair registered in your OpenStack project:</p>
+      <pre><code class="language-bash"># Generate a key pair if you don't have one
+ssh-keygen -t ed25519 -f ~/.ssh/id_proxmox -N ""
+
+# Upload it to OpenStack
+openstack keypair create --public-key ~/.ssh/id_proxmox.pub my-key</code></pre>
+
+      <h2>6. GPU Baremetal Flavor</h2>
+      <p>
+        Ensure your OpenStack project has access to a baremetal flavor with GPU.
+        Common OVHcloud GPU flavors include <code>b3-8</code> (NVIDIA T4).
+      </p>
+      <pre><code class="language-bash"># List available flavors
+openstack flavor list | grep -i gpu</code></pre>
+
+      <h2>Quick Validation</h2>
+      <p>Run these commands to verify everything is ready:</p>
+      <pre><code class="language-bash"># Check Python
+python3 --version
+
+# Check the tool is installed
+proxmox-install --help
+
+# Validate your configuration
+proxmox-install --config config.yaml --dry-run</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

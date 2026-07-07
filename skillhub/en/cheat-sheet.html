@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — CLI & Config Cheat Sheet</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>CLI & Config Cheat Sheet</h1>
+      <p class="lesson-meta">Difficulty: <strong>Beginner</strong> · Estimated time: <strong>10 min</strong></p>
+
+      <p>Quick reference for all commands and configurations used in this training.</p>
+
+      <h2>Automation CLI</h2>
+      <pre><code class="language-bash"># Full automated build
+proxmox-install --config config.yaml
+
+# Dry run (validate only)
+proxmox-install --config config.yaml --dry-run
+
+# Skip GPU passthrough
+proxmox-install --config config.yaml --skip-gpu
+
+# Skip test VM creation
+proxmox-install --config config.yaml --skip-vm
+
+# Debug mode
+proxmox-install --config config.yaml --debug
+
+# Cleanup only
+proxmox-install --config config.yaml --cleanup-only
+
+# With log file
+proxmox-install --config config.yaml --log-file build.log</code></pre>
+
+      <h2>OpenStack Commands</h2>
+      <pre><code class="language-bash"># Create instance
+openstack server create --image "Debian 12" --flavor "b3-8" \
+  --key-name my-key --network Ext-Net proxmox-node
+
+# Show instance
+openstack server show proxmox-node
+
+# Delete instance
+openstack server delete proxmox-node
+
+# List flavors
+openstack flavor list
+
+# List images
+openstack image list | grep -i debian</code></pre>
+
+      <h2>Proxmox VM Management (qm)</h2>
+      <pre><code class="language-bash"># Create VM
+qm create 100 --name gpu-vm --memory 8192 --cores 4 \
+  --machine q35 --bios ovmf --ostype l26
+
+# Attach GPU
+qm set 100 --hostpci0 41:00.0,pcie=1,x-vga=1
+
+# Set CPU for passthrough
+qm set 100 --cpu host,hidden=1,flags=+pcid
+
+# Add disk
+qm set 100 --scsi0 local-lvm:32,iothread=1
+
+# Add EFI disk
+qm set 100 --efidisk0 local-lvm:1,efitype=4m
+
+# Start/stop/status
+qm start 100
+qm stop 100
+qm status 100
+
+# View configuration
+qm config 100
+
+# Destroy VM
+qm destroy 100 --purge
+
+# Get next available VMID
+pvesh get /cluster/nextid</code></pre>
+
+      <h2>GPU & IOMMU Commands</h2>
+      <pre><code class="language-bash"># Detect GPUs
+lspci -nn | grep -iE '(vga|3d|display)'
+
+# Check driver binding
+lspci -ks 41:00.0
+
+# Check IOMMU status
+dmesg | grep -i iommu
+
+# List IOMMU groups
+find /sys/kernel/iommu_groups/ -type l | sort -V
+
+# Verify VFIO modules loaded
+lsmod | grep vfio
+
+# Update GRUB after changes
+update-grub
+
+# Update initramfs
+update-initramfs -u -k all</code></pre>
+
+      <h2>Proxmox Service Management</h2>
+      <pre><code class="language-bash"># Check Proxmox version
+pveversion
+
+# Service status
+systemctl is-active pve-cluster
+systemctl is-active pvedaemon
+systemctl is-active pveproxy
+
+# Restart web UI
+systemctl restart pveproxy
+
+# View Proxmox logs
+journalctl -u pvedaemon -f</code></pre>
+
+      <h2>Configuration File Template</h2>
+      <pre><code class="language-yaml">openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+  application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
+
+instance:
+  base_image_name: "Debian 12"
+  flavor_name: "b3-8"
+  ssh_username: "debian"
+  ssh_key_name: "my-key"
+  ssh_key_path: "~/.ssh/id_rsa"
+
+proxmox:
+  version: "8.2"
+  enterprise_repo: false
+  storage_type: "local-lvm"
+  network_bridge: "vmbr0"
+
+gpu_passthrough:
+  enabled: true
+  auto_detect: true
+  iommu_type: "intel"
+  blacklist_drivers:
+    - nouveau
+    - nvidia
+    - nvidiafb
+    - nvidia_drm
+
+test_vm:
+  enabled: true
+  name: "gpu-test-vm"
+  memory_mb: 8192
+  cores: 4
+  disk_gb: 32
+  machine_type: "q35"
+  bios: "ovmf"
+
+timeouts:
+  instance_ready: 600
+  ssh_connection: 300
+  proxmox_install: 1200
+  reboot_wait: 300
+  gpu_setup: 600
+  vm_creation: 300</code></pre>
+
+      <h2>Key File Paths (on Proxmox Host)</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/etc/default/grub</td><td>IOMMU kernel parameters</td></tr>
+          <tr><td>/etc/modprobe.d/blacklist-gpu.conf</td><td>GPU driver blacklist</td></tr>
+          <tr><td>/etc/modprobe.d/vfio.conf</td><td>VFIO-PCI device IDs</td></tr>
+          <tr><td>/etc/modules-load.d/vfio.conf</td><td>VFIO modules to load at boot</td></tr>
+          <tr><td>/etc/udev/rules.d/99-vfio.rules</td><td>Persistent VFIO binding</td></tr>
+          <tr><td>/etc/pve/qemu-server/*.conf</td><td>VM configurations</td></tr>
+          <tr><td>/etc/apt/sources.list.d/pve-install-repo.list</td><td>Proxmox repository</td></tr>
+        </tbody>
+      </table>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

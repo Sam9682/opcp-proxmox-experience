@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Création de VM avec GPU</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Création de VM avec GPU</h1>
+      <p class="lesson-meta">Difficulté : <strong>Avancé</strong> · Temps estimé : <strong>25 min</strong></p>
+
+      <p>
+        Maintenant que le GPU passthrough est configuré, nous créons une VM dans Proxmox
+        avec accès GPU direct. La VM utilise le type machine Q35 et le firmware UEFI OVMF —
+        tous deux requis pour le passthrough PCIe.
+      </p>
+
+      <h2>Configuration de la VM</h2>
+      <table>
+        <thead>
+          <tr><th>Paramètre</th><th>Valeur</th><th>Pourquoi</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Type machine</td><td>q35</td><td>Supporte le passthrough PCIe nativement</td></tr>
+          <tr><td>BIOS</td><td>ovmf (UEFI)</td><td>Requis pour l'initialisation GPU</td></tr>
+          <tr><td>Type CPU</td><td>host</td><td>Expose toutes les fonctionnalités CPU au guest</td></tr>
+          <tr><td>Mémoire</td><td>8192 Mo</td><td>Suffisant pour les charges GPU</td></tr>
+          <tr><td>Cœurs</td><td>4</td><td>Équilibré pour les tests</td></tr>
+          <tr><td>Contrôleur SCSI</td><td>virtio-scsi-single</td><td>Meilleures performances disque</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Création de la VM</h2>
+      <pre><code class="language-bash"># Créer la VM
+qm create 100 \
+  --name gpu-test-vm \
+  --memory 8192 \
+  --cores 4 \
+  --machine q35 \
+  --bios ovmf \
+  --ostype l26 \
+  --net0 virtio,bridge=vmbr0 \
+  --scsihw virtio-scsi-single \
+  --scsi0 local-lvm:32,iothread=1 \
+  --efidisk0 local-lvm:1,efitype=4m</code></pre>
+
+      <h2>Attachement du GPU</h2>
+      <ul>
+        <li><code>pcie=1</code> — Utiliser le bus PCIe (pas PCI legacy)</li>
+        <li><code>x-vga=1</code> — Marquer comme adaptateur d'affichage principal</li>
+      </ul>
+      <pre><code class="language-bash"># Attacher le GPU (adresse PCI sans le préfixe domaine 0000:)
+qm set 100 --hostpci0 41:00.0,pcie=1,x-vga=1
+
+# Définir les flags CPU pour compatibilité passthrough
+qm set 100 --cpu host,hidden=1,flags=+pcid</code></pre>
+
+      <p>
+        Le flag <code>hidden=1</code> cache KVM au système guest. Certains drivers NVIDIA
+        refusent de charger dans une VM sans ce flag.
+      </p>
+
+      <h2>Démarrage de la VM</h2>
+      <pre><code class="language-bash"># Démarrer la VM
+qm start 100
+
+# Vérifier le statut
+qm status 100
+# status: running
+
+# Voir la configuration
+qm config 100</code></pre>
+
+      <h2>Résumé de la configuration VM</h2>
+      <pre><code class="language-yaml"># Configuration VM Proxmox (/etc/pve/qemu-server/100.conf) :
+bios: ovmf
+boot: order=scsi0
+cores: 4
+cpu: host,hidden=1,flags=+pcid
+efidisk0: local-lvm:vm-100-disk-1,efitype=4m
+hostpci0: 41:00.0,pcie=1,x-vga=1
+machine: q35
+memory: 8192
+name: gpu-test-vm
+net0: virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr0
+ostype: l26
+scsi0: local-lvm:vm-100-disk-0,iothread=1,size=32G
+scsihw: virtio-scsi-single</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

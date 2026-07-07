@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Baremetal Provisioning</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Baremetal Provisioning</h1>
+      <p class="lesson-meta">Difficulty: <strong>Intermediate</strong> · Estimated time: <strong>25 min</strong></p>
+
+      <p>
+        In this lesson, you'll learn how the automation provisions a baremetal GPU instance
+        on OVHcloud OpenStack. The provisioner authenticates via application credentials,
+        creates an instance with the specified flavor, and waits for SSH connectivity.
+      </p>
+
+      <h2>Authentication</h2>
+      <p>
+        The tool uses the OpenStack SDK with application credentials for authentication.
+        This avoids storing username/password and provides scoped access.
+      </p>
+      <pre><code class="language-yaml"># config.yaml — OpenStack credentials section
+openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+  application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"</code></pre>
+
+      <p>Environment variables are resolved at runtime. Export them before running:</p>
+      <pre><code class="language-bash"># Set your credentials
+export OS_APPLICATION_CREDENTIAL_ID="your-credential-id"
+export OS_APPLICATION_CREDENTIAL_SECRET="your-credential-secret"</code></pre>
+
+      <h2>Instance Specification</h2>
+      <p>
+        The instance is created with a Debian 12 base image on a GPU-enabled baremetal flavor.
+        Key parameters:
+      </p>
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>base_image_name</td><td>Debian 12</td><td>Base OS image for the instance</td></tr>
+          <tr><td>flavor_name</td><td>b3-8</td><td>Baremetal flavor with GPU</td></tr>
+          <tr><td>ssh_key_name</td><td>—</td><td>Name of the SSH key in OpenStack</td></tr>
+          <tr><td>network_name</td><td>Ext-Net</td><td>Network to attach to</td></tr>
+          <tr><td>ssh_username</td><td>debian</td><td>Default user for SSH</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Provisioning Workflow</h2>
+      <p>The provisioner performs these steps:</p>
+      <ol>
+        <li>Authenticate to OpenStack API</li>
+        <li>Create a server with the specified image, flavor, and key pair</li>
+        <li>Wait for the instance status to become <code>ACTIVE</code> (timeout: 600s)</li>
+        <li>Retrieve the instance IP address</li>
+        <li>Establish an SSH connection (timeout: 300s)</li>
+      </ol>
+
+      <pre><code class="language-bash"># What the automation does (equivalent manual commands):
+# Create the instance
+openstack server create \
+  --image "Debian 12" \
+  --flavor "b3-8" \
+  --key-name "my-key" \
+  --network "Ext-Net" \
+  --security-group "default" \
+  proxmox-gpu-node
+
+# Wait for it to be active
+openstack server show proxmox-gpu-node -f value -c status
+
+# Get the IP
+openstack server show proxmox-gpu-node -f value -c addresses</code></pre>
+
+      <h2>SSH Connection</h2>
+      <p>
+        Once the instance is ready, the tool connects via SSH using the specified key.
+        All subsequent steps (Proxmox install, GPU config) are performed over this connection.
+      </p>
+      <pre><code class="language-bash"># Manual equivalent
+ssh -i ~/.ssh/id_rsa debian@&lt;instance-ip&gt;</code></pre>
+
+      <h2>Timeouts</h2>
+      <p>Configurable timeouts protect against hung provisioning:</p>
+      <pre><code class="language-yaml">timeouts:
+  instance_ready: 600    # Max wait for instance ACTIVE
+  ssh_connection: 300    # Max wait for SSH connectivity
+  proxmox_install: 1200  # Max time for Proxmox installation
+  reboot_wait: 300       # Max wait after reboot
+  gpu_setup: 600         # Max time for GPU configuration
+  vm_creation: 300       # Max time for VM creation</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — GPU Passthrough (IOMMU & VFIO)</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>GPU Passthrough (IOMMU & VFIO)</h1>
+      <p class="lesson-meta">Difficulté : <strong>Avancé</strong> · Temps estimé : <strong>35 min</strong></p>
+
+      <p>
+        C'est la leçon centrale de la formation. Vous apprendrez comment IOMMU et VFIO
+        fonctionnent ensemble pour isoler les périphériques GPU de l'hôte et les rendre
+        disponibles pour le passthrough VM.
+      </p>
+
+      <h2>Étape 1 : Détection GPU</h2>
+      <pre><code class="language-bash"># Détecter les contrôleurs VGA/3D
+lspci -nn | grep -iE '(vga|3d|display)'
+
+# Exemple de sortie :
+# 41:00.0 3D controller [0302]: NVIDIA Corporation Tesla T4 [10de:1eb8] (rev a1)</code></pre>
+
+      <h2>Étape 2 : Configuration IOMMU</h2>
+      <p>
+        L'IOMMU doit être activé dans les paramètres kernel GRUB :
+      </p>
+      <pre><code class="language-bash"># Pour CPUs Intel :
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"
+
+# Pour CPUs AMD :
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet amd_iommu=on iommu=pt"
+
+# L'automatisation met à jour GRUB :
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 intel_iommu=on iommu=pt"/' /etc/default/grub
+update-grub</code></pre>
+
+      <h2>Étape 3 : Modules noyau VFIO</h2>
+      <pre><code class="language-bash"># Modules requis (écrits dans /etc/modules-load.d/vfio.conf) :
+vfio
+vfio_iommu_type1
+vfio_pci
+vfio_virqfd
+
+# Mettre à jour initramfs
+update-initramfs -u -k all</code></pre>
+
+      <h2>Étape 4 : Blacklister les drivers GPU</h2>
+      <pre><code class="language-bash"># /etc/modprobe.d/blacklist-gpu.conf
+blacklist nouveau
+blacklist nvidia
+blacklist nvidiafb
+blacklist nvidia_drm
+
+# S'assurer que VFIO charge en premier
+softdep nouveau pre: vfio-pci
+softdep nvidia pre: vfio-pci
+softdep nvidiafb pre: vfio-pci
+softdep nvidia_drm pre: vfio-pci</code></pre>
+
+      <h2>Étape 5 : Liaison VFIO-PCI</h2>
+      <pre><code class="language-bash"># /etc/modprobe.d/vfio.conf
+options vfio-pci ids=10de:1eb8</code></pre>
+
+      <h2>Étape 6 : Règles Udev</h2>
+      <pre><code class="language-bash"># /etc/udev/rules.d/99-vfio.rules
+ACTION=="add", ATTR{vendor}=="0x10de", ATTR{device}=="0x1eb8", DRIVER=="", ATTR{driver_override}="vfio-pci"
+
+# Recharger les règles udev
+udevadm control --reload-rules</code></pre>
+
+      <h2>Étape 7 : Vérification (après reboot)</h2>
+      <pre><code class="language-bash"># Vérifier que IOMMU est activé
+dmesg | grep -i iommu | head -5
+
+# Compter les groupes IOMMU
+find /sys/kernel/iommu_groups/ -maxdepth 1 -mindepth 1 -type d | wc -l
+
+# Vérifier que le GPU est lié à vfio-pci
+lspci -ks 41:00.0
+# Kernel driver in use: vfio-pci</code></pre>
+
+      <h2>Dépannage</h2>
+      <ul>
+        <li><strong>IOMMU non activé :</strong> Vérifiez les paramètres BIOS/UEFI pour VT-d ou AMD-Vi</li>
+        <li><strong>GPU toujours sur driver nvidia :</strong> Vérifiez que le blacklist est dans l'initramfs</li>
+        <li><strong>Groupe IOMMU trop grand :</strong> Peut nécessiter un patch ACS override</li>
+        <li><strong>Périphérique audio dans le même groupe :</strong> Passez les deux (GPU + audio)</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

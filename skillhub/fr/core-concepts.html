@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Concepts Fondamentaux</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Concepts Fondamentaux</h1>
+      <p class="lesson-meta">Difficulté : <strong>Débutant</strong> · Temps estimé : <strong>15 min</strong></p>
+
+      <p>
+        Avant de plonger dans les labs pratiques, comprenons les technologies clés
+        qui rendent le GPU passthrough sur Proxmox possible.
+      </p>
+
+      <h2>Proxmox VE</h2>
+      <p>
+        Proxmox Virtual Environment est une plateforme de virtualisation serveur open-source
+        basée sur Debian. Elle intègre l'hyperviseur KVM et les conteneurs LXC avec une
+        interface web puissante, idéale pour exécuter des charges GPU dans des VMs.
+      </p>
+      <ul>
+        <li><strong>KVM</strong> — Kernel-based Virtual Machine, fournit la virtualisation matérielle</li>
+        <li><strong>QEMU</strong> — Émulateur de machine, gère l'émulation des périphériques VM</li>
+        <li><strong>Q35</strong> — Type de machine moderne supportant le passthrough PCIe</li>
+        <li><strong>OVMF</strong> — Firmware UEFI pour les VMs (requis pour le GPU passthrough)</li>
+      </ul>
+
+      <h2>PCI Passthrough</h2>
+      <p>
+        Le PCI passthrough permet d'assigner directement un périphérique PCI physique (comme un GPU)
+        à une machine virtuelle, en contournant l'hyperviseur. La VM obtient des performances
+        quasi-natives du périphérique.
+      </p>
+
+      <h2>IOMMU (Input-Output Memory Management Unit)</h2>
+      <p>
+        L'IOMMU fournit l'isolation mémoire entre les périphériques et l'hôte. Il garantit
+        qu'un périphérique passé en passthrough ne peut accéder qu'aux régions mémoire assignées à sa VM.
+      </p>
+      <ul>
+        <li><strong>Intel VT-d</strong> — Implémentation IOMMU d'Intel (<code>intel_iommu=on</code>)</li>
+        <li><strong>AMD-Vi</strong> — Implémentation IOMMU d'AMD (<code>amd_iommu=on</code>)</li>
+        <li><strong>Groupes IOMMU</strong> — groupements logiques de périphériques PCI qui doivent être passés ensemble</li>
+      </ul>
+
+      <h2>VFIO (Virtual Function I/O)</h2>
+      <p>
+        VFIO est un framework noyau Linux qui fournit aux pilotes en espace utilisateur un accès
+        direct aux périphériques. Pour le GPU passthrough, on lie le GPU au driver <code>vfio-pci</code>
+        au lieu du driver GPU natif (ex: <code>nouveau</code> ou <code>nvidia</code>).
+      </p>
+      <pre><code class="language-bash"># Vérifier la liaison driver actuelle
+lspci -ks 41:00.0
+
+# Attendu après liaison VFIO :
+# Kernel driver in use: vfio-pci</code></pre>
+
+      <h2>Vue d'ensemble de l'architecture</h2>
+      <p>Le workflow d'automatisation suit ces étapes :</p>
+      <table>
+        <thead>
+          <tr><th>Étape</th><th>Composant</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Provisioner</td><td>Crée une instance baremetal sur OpenStack</td></tr>
+          <tr><td>2</td><td>Installer</td><td>Installe les paquets Proxmox VE sur Debian</td></tr>
+          <tr><td>3</td><td>IOMMU Config</td><td>Active IOMMU dans GRUB et charge les modules VFIO</td></tr>
+          <tr><td>4</td><td>GPU Detector</td><td>Détecte les GPUs NVIDIA/AMD via lspci</td></tr>
+          <tr><td>5</td><td>VFIO Manager</td><td>Lie les GPUs au driver vfio-pci</td></tr>
+          <tr><td>6</td><td>VM Creator</td><td>Crée une VM Q35/OVMF avec périphérique hostpci</td></tr>
+          <tr><td>7</td><td>Validator</td><td>Vérifie que le GPU est visible dans la VM</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fichier de configuration clé</h2>
+      <pre><code class="language-yaml">openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+
+instance:
+  base_image_name: "Debian 12"
+  flavor_name: "b3-8"
+
+proxmox:
+  version: "8.2"
+  enterprise_repo: false
+  network_bridge: "vmbr0"
+
+gpu_passthrough:
+  enabled: true
+  iommu_type: "intel"
+  blacklist_drivers:
+    - nouveau
+    - nvidia
+    - nvidiafb
+    - nvidia_drm
+
+test_vm:
+  enabled: true
+  name: "gpu-test-vm"
+  memory_mb: 8192
+  cores: 4
+  machine_type: "q35"
+  bios: "ovmf"</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

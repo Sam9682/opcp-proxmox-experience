@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Core Concepts</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Core Concepts</h1>
+      <p class="lesson-meta">Difficulty: <strong>Beginner</strong> · Estimated time: <strong>15 min</strong></p>
+
+      <p>
+        Before diving into the hands-on labs, let's understand the key technologies
+        that make GPU passthrough on Proxmox possible.
+      </p>
+
+      <h2>Proxmox VE</h2>
+      <p>
+        Proxmox Virtual Environment is an open-source server virtualization platform based on
+        Debian. It integrates KVM hypervisor and LXC containers with a powerful web UI,
+        making it ideal for running GPU workloads in VMs.
+      </p>
+      <ul>
+        <li><strong>KVM</strong> — Kernel-based Virtual Machine, provides hardware-level virtualization</li>
+        <li><strong>QEMU</strong> — Machine emulator, handles VM device emulation</li>
+        <li><strong>Q35</strong> — Modern machine type that supports PCIe passthrough</li>
+        <li><strong>OVMF</strong> — UEFI firmware for VMs (required for GPU passthrough)</li>
+      </ul>
+
+      <h2>PCI Passthrough</h2>
+      <p>
+        PCI passthrough allows a physical PCI device (like a GPU) to be directly assigned to
+        a virtual machine, bypassing the hypervisor. The VM gets near-native performance
+        from the device.
+      </p>
+
+      <h2>IOMMU (Input-Output Memory Management Unit)</h2>
+      <p>
+        IOMMU provides memory isolation between devices and the host. It ensures that a
+        passed-through device can only access the memory regions assigned to its VM.
+      </p>
+      <ul>
+        <li><strong>Intel VT-d</strong> — Intel's IOMMU implementation (<code>intel_iommu=on</code>)</li>
+        <li><strong>AMD-Vi</strong> — AMD's IOMMU implementation (<code>amd_iommu=on</code>)</li>
+        <li><strong>IOMMU Groups</strong> — logical groupings of PCI devices that must be passed through together</li>
+      </ul>
+
+      <h2>VFIO (Virtual Function I/O)</h2>
+      <p>
+        VFIO is a Linux kernel framework that provides user-space drivers with direct device access.
+        For GPU passthrough, we bind the GPU to the <code>vfio-pci</code> driver instead of
+        the native GPU driver (e.g., <code>nouveau</code> or <code>nvidia</code>).
+      </p>
+      <pre><code class="language-bash"># Check current driver binding
+lspci -ks 41:00.0
+
+# Expected after VFIO binding:
+# Kernel driver in use: vfio-pci</code></pre>
+
+      <h2>Architecture Overview</h2>
+      <p>The automation workflow follows these stages:</p>
+      <table>
+        <thead>
+          <tr><th>Stage</th><th>Component</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Provisioner</td><td>Creates a baremetal instance on OpenStack</td></tr>
+          <tr><td>2</td><td>Installer</td><td>Installs Proxmox VE packages on Debian</td></tr>
+          <tr><td>3</td><td>IOMMU Config</td><td>Enables IOMMU in GRUB and loads VFIO modules</td></tr>
+          <tr><td>4</td><td>GPU Detector</td><td>Detects NVIDIA/AMD GPUs via lspci</td></tr>
+          <tr><td>5</td><td>VFIO Manager</td><td>Binds GPUs to vfio-pci driver</td></tr>
+          <tr><td>6</td><td>VM Creator</td><td>Creates a Q35/OVMF VM with hostpci device</td></tr>
+          <tr><td>7</td><td>Validator</td><td>Verifies GPU is visible inside the VM</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Key Configuration File</h2>
+      <p>The entire workflow is driven by a YAML configuration:</p>
+      <pre><code class="language-yaml">openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+
+instance:
+  base_image_name: "Debian 12"
+  flavor_name: "b3-8"
+
+proxmox:
+  version: "8.2"
+  enterprise_repo: false
+  network_bridge: "vmbr0"
+
+gpu_passthrough:
+  enabled: true
+  iommu_type: "intel"
+  blacklist_drivers:
+    - nouveau
+    - nvidia
+    - nvidiafb
+    - nvidia_drm
+
+test_vm:
+  enabled: true
+  name: "gpu-test-vm"
+  memory_mb: 8192
+  cores: 4
+  machine_type: "q35"
+  bios: "ovmf"</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Introduction</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Proxmox VE GPU Passthrough on OVH Baremetal</h1>
+
+      <p>
+        Welcome to <strong>SkillHub</strong>, the hands-on training companion for the
+        <em>opcp-proxmox-install</em> project. This course walks you through
+        deploying Proxmox VE on OVHcloud baremetal instances and configuring GPU PCI passthrough
+        for high-performance VM workloads.
+      </p>
+
+      <h2>Context</h2>
+      <p>
+        You have access to an OVHcloud OpenStack project with baremetal (GPU) nodes.
+        Using our automation tooling, you will provision a Debian-based instance,
+        install Proxmox VE, configure IOMMU and VFIO for GPU isolation, and create
+        a VM with direct GPU access — all automated via a single CLI command.
+      </p>
+
+      <h2>What You Will Learn</h2>
+      <p>By the end of this training path you will be comfortable with:</p>
+      <ul>
+        <li><strong>Core Concepts</strong> — Proxmox VE architecture, PCI passthrough fundamentals, and IOMMU groups</li>
+        <li><strong>Baremetal Provisioning</strong> — creating instances on OVHcloud OpenStack with GPU flavors</li>
+        <li><strong>Proxmox Installation</strong> — automated Proxmox VE deployment on Debian</li>
+        <li><strong>GPU Passthrough</strong> — IOMMU configuration, VFIO driver binding, and device isolation</li>
+        <li><strong>VM Creation</strong> — creating Q35/OVMF VMs with hostpci GPU devices</li>
+        <li><strong>Validation</strong> — verifying GPU visibility inside VMs</li>
+      </ul>
+
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>Basic familiarity with a terminal / command line</li>
+        <li>Python 3.9+ installed</li>
+        <li>An OVHcloud Public Cloud project with baremetal GPU access</li>
+      </ul>
+
+      <h2>Quick Start</h2>
+      <p>Install the automation tool and run the full workflow:</p>
+      <pre><code class="language-bash"># Clone the project
+git clone https://forgejo.example.com/opcp-proxmox-install.git
+cd opcp-proxmox-install
+
+# Install in a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Run the automation (dry-run first)
+proxmox-install --config config.yaml --dry-run
+
+# Execute the full build
+proxmox-install --config config.yaml</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

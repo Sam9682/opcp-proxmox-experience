@@ -1,0 +1,80 @@
+# Configuration for Proxmox VE Installation on OVH Baremetal OpenStack
+# Copy this file to config.yaml and update with your values
+
+# OpenStack configuration
+openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA7"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "your_credential_id_here"
+  application_credential_secret: "your_credential_secret_here"
+  project_name: "your-project"
+  identity_api_version: "3"
+  interface: "public"
+
+# Baremetal instance configuration
+instance:
+  base_image_name: "Debian 12"
+  flavor_name: "b3-8"          # Baremetal GPU flavor
+  ssh_username: "debian"
+  ssh_key_name: "my-keypair"   # OpenStack keypair name
+  ssh_key_path: "~/.ssh/id_rsa"
+  availability_zone: null
+
+# Network configuration
+networking:
+  network_name: "Ext-Net"
+  subnet_name: null
+  security_groups:
+    - default
+  floating_ip_pool: null
+  use_floating_ip: true
+
+# Proxmox VE configuration
+proxmox:
+  version: "8.2"
+  enterprise_repo: false       # Use no-subscription repo
+  root_password: null          # Will be auto-generated if null
+  storage_type: "local-lvm"
+  network_bridge: "vmbr0"
+  cluster_name: null           # Optional, for multi-node setups
+
+# GPU PCI Passthrough configuration
+gpu_passthrough:
+  enabled: true
+  auto_detect: true            # Auto-detect NVIDIA/AMD GPUs
+  iommu_type: "intel"          # "intel" or "amd"
+  blacklist_drivers:
+    - nouveau
+    - nvidia
+    - nvidiafb
+    - nvidia_drm
+  # Manual device specification (optional, overrides auto_detect):
+  # devices:
+  #   - pci_id: "0000:41:00.0"
+  #     description: "NVIDIA T4 GPU"
+  #   - pci_id: "0000:41:00.1"
+  #     description: "NVIDIA T4 Audio"
+
+# Test VM configuration (to validate GPU passthrough)
+test_vm:
+  enabled: true
+  name: "gpu-test-vm"
+  memory_mb: 8192
+  cores: 4
+  disk_gb: 32
+  machine_type: "q35"         # Required for PCI passthrough
+  bios: "ovmf"               # UEFI boot (recommended for passthrough)
+  os_type: "l26"             # Linux 2.6+ kernel
+  network_bridge: "vmbr0"
+  # Optional: provide an ISO for the test VM
+  # os_iso: "local:iso/ubuntu-22.04-live-server-amd64.iso"
+
+# Timeout configuration (in seconds)
+timeouts:
+  instance_ready: 600         # Baremetal takes longer
+  ssh_connection: 300
+  proxmox_install: 1200
+  reboot_wait: 300
+  gpu_setup: 600
+  vm_creation: 300

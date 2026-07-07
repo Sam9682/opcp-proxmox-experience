@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Proxmox GPU Passthrough Training</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f6fa; color: #1a1a2e;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; text-align: center; padding: 1rem;
+    }
+    .brand { color: #000E9C; font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { color: #555; font-size: 1rem; margin-bottom: 2rem; }
+    .lang-links { display: flex; gap: 1rem; justify-content: center; }
+    .lang-links a {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 120px; padding: 0.75rem 1.5rem; border-radius: 6px;
+      font-size: 1rem; font-weight: 600; text-decoration: none;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .lang-links a.en { background: #000E9C; color: #fff; }
+    .lang-links a.en:hover { background: #4949FF; }
+    .lang-links a.fr { background: #fff; color: #000E9C; border: 2px solid #000E9C; }
+    .lang-links a.fr:hover { background: #000E9C; color: #fff; }
+    .lang-links a:focus-visible { outline: 2px solid #4949FF; outline-offset: 2px; }
+    .redirecting { font-size: 0.85rem; color: #555; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <div class="brand">SkillHub</div>
+  <p class="subtitle">Proxmox GPU Passthrough on Baremetal — OVHcloud Training</p>
+  <nav class="lang-links" aria-label="Language selection">
+    <a href="en/index.html" class="en" aria-label="Continue in English">English</a>
+    <a href="fr/index.html" class="fr" aria-label="Continuer en français">Français</a>
+  </nav>
+  <p class="redirecting" role="status">Detecting your language…</p>
+  <script src="assets/js/i18n.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var locale = window.SkillHub.i18n.detectLocale();
+      try { localStorage.setItem('skillhub-lang', locale); } catch (e) { /* noop */ }
+      window.location.replace(locale + '/index.html');
+    })();
+  </script>
+</body>
+</html>

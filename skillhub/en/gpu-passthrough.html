@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — GPU Passthrough (IOMMU & VFIO)</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>GPU Passthrough (IOMMU & VFIO)</h1>
+      <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>35 min</strong></p>
+
+      <p>
+        This is the core lesson of the training. You'll learn how IOMMU and VFIO work together
+        to isolate GPU devices from the host and make them available for VM passthrough.
+      </p>
+
+      <h2>Step 1: GPU Detection</h2>
+      <p>
+        The automation detects NVIDIA and AMD GPUs using <code>lspci</code>:
+      </p>
+      <pre><code class="language-bash"># Detect VGA/3D controllers
+lspci -nn | grep -iE '(vga|3d|display)'
+
+# Example output:
+# 41:00.0 3D controller [0302]: NVIDIA Corporation Tesla T4 [10de:1eb8] (rev a1)</code></pre>
+
+      <p>Key information extracted:</p>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>Example</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PCI ID</td><td>0000:41:00.0</td><td>Unique device address</td></tr>
+          <tr><td>Vendor ID</td><td>10de</td><td>NVIDIA identifier</td></tr>
+          <tr><td>Device ID</td><td>1eb8</td><td>Tesla T4 identifier</td></tr>
+          <tr><td>IOMMU Group</td><td>varies</td><td>Isolation group</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Step 2: IOMMU Configuration</h2>
+      <p>
+        IOMMU must be enabled in GRUB kernel parameters. The automation detects whether
+        to use Intel VT-d or AMD-Vi based on your configuration:
+      </p>
+      <pre><code class="language-bash"># For Intel CPUs:
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"
+
+# For AMD CPUs:
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet amd_iommu=on iommu=pt"
+
+# The automation updates GRUB:
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 intel_iommu=on iommu=pt"/' /etc/default/grub
+update-grub</code></pre>
+
+      <h2>Step 3: VFIO Kernel Modules</h2>
+      <p>
+        The VFIO framework requires several kernel modules to be loaded at boot:
+      </p>
+      <pre><code class="language-bash"># Required modules (written to /etc/modules-load.d/vfio.conf):
+vfio
+vfio_iommu_type1
+vfio_pci
+vfio_virqfd
+
+# Update initramfs to include VFIO modules early in boot
+update-initramfs -u -k all</code></pre>
+
+      <h2>Step 4: Blacklist GPU Drivers</h2>
+      <p>
+        Native GPU drivers must be blacklisted to prevent them from claiming the device
+        before VFIO can bind to it:
+      </p>
+      <pre><code class="language-bash"># /etc/modprobe.d/blacklist-gpu.conf
+blacklist nouveau
+blacklist nvidia
+blacklist nvidiafb
+blacklist nvidia_drm
+
+# Ensure VFIO loads before any GPU driver
+softdep nouveau pre: vfio-pci
+softdep nvidia pre: vfio-pci
+softdep nvidiafb pre: vfio-pci
+softdep nvidia_drm pre: vfio-pci</code></pre>
+
+      <h2>Step 5: VFIO-PCI Device Binding</h2>
+      <p>
+        Configure VFIO-PCI to claim specific GPU devices by vendor:device ID pairs:
+      </p>
+      <pre><code class="language-bash"># /etc/modprobe.d/vfio.conf
+options vfio-pci ids=10de:1eb8
+
+# The IDs correspond to your GPU(s). Multiple GPUs:
+# options vfio-pci ids=10de:1eb8,10de:10f0</code></pre>
+
+      <h2>Step 6: Udev Rules</h2>
+      <p>
+        Persistent udev rules ensure VFIO binding survives across reboots:
+      </p>
+      <pre><code class="language-bash"># /etc/udev/rules.d/99-vfio.rules
+ACTION=="add", ATTR{vendor}=="0x10de", ATTR{device}=="0x1eb8", DRIVER=="", ATTR{driver_override}="vfio-pci"
+
+# Reload udev rules
+udevadm control --reload-rules</code></pre>
+
+      <h2>Step 7: Verification (After Reboot)</h2>
+      <p>After reboot, verify IOMMU is enabled and GPUs are bound to VFIO:</p>
+      <pre><code class="language-bash"># Check IOMMU is enabled
+dmesg | grep -i iommu | head -5
+# Should show: DMAR: IOMMU enabled
+
+# Count IOMMU groups
+find /sys/kernel/iommu_groups/ -maxdepth 1 -mindepth 1 -type d | wc -l
+
+# Verify GPU is bound to vfio-pci
+lspci -ks 41:00.0
+# Kernel driver in use: vfio-pci</code></pre>
+
+      <h2>Troubleshooting</h2>
+      <ul>
+        <li><strong>IOMMU not enabled:</strong> Check BIOS/UEFI settings for VT-d or AMD-Vi</li>
+        <li><strong>GPU still using nvidia driver:</strong> Verify blacklist is in initramfs (<code>lsinitramfs</code>)</li>
+        <li><strong>IOMMU group too large:</strong> May need ACS override patch (not recommended for production)</li>
+        <li><strong>Audio device in same group:</strong> Pass through both GPU and its audio controller</li>
+      </ul>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
