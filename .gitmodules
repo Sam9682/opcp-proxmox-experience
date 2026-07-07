@@ -1,0 +1,3 @@
+[submodule "shared"]
+	path = shared
+	url = ssh://git@forgejo.ovhcloud.tools/chair-psmc/ai-swautomorph--shared.git
