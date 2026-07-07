@@ -58,7 +58,12 @@ temp/
 config.yaml
 *.secret
 *.key
-*.pem
+
+# Swautomorph platform sensitive files
+.env.prod
+ssl/privkey.pem
+ssl/fullchain.pem
+conf/nginx.conf
 
 # Build artifacts
 *.qcow2
@@ -75,3 +80,6 @@ config.yaml
 
 # mypy
 .mypy_cache/
+
+# Backups
+backups/
