@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+<<<<<<< HEAD
     container_name: opcp-proxmox-experience-app-${USER_ID:-0}-${HTTP_PORT:-6040}
     ports:
       - "${HTTP_PORT:-6040}:5000"
@@ -18,6 +19,21 @@ services:
     volumes:
       - app_data:/app/data
       - ./skillhub:/app/static/skillhub:ro
+=======
+    container_name: opcp-proxmox-install-app-${USER_ID:-0}-${HTTP_PORT:-5000}
+    ports:
+      - "${HTTP_PORT:-5000}:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - USER_ID=${USER_ID:-1}
+      - USER_NAME=${USER_NAME:-User}
+      - USER_EMAIL=${USER_EMAIL:-user@example.com}
+      - DESCRIPTION=${DESCRIPTION:-Proxmox GPU Passthrough Automation}
+    volumes:
+      - app_data:/app/data
+      - ./skillhub:/app/templates:rw
+>>>>>>> 02b267acc52bd446a54de20fffa01343e86f0cc0
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -28,6 +44,7 @@ services:
 
   nginx:
     image: nginx:alpine
+<<<<<<< HEAD
     container_name: opcp-proxmox-experience-nginx-${USER_ID:-0}-${HTTPS_PORT:-6041}
     ports:
       - "${HTTPS_PORT:-6041}:443"
@@ -35,12 +52,29 @@ services:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
       - ./skillhub:/var/www/html:ro
+=======
+    container_name: opcp-proxmox-install-nginx-${USER_ID:-0}-${HTTPS_PORT:-5001}
+    ports:
+      - "${HTTPS_PORT:-5001}:443"
+    volumes:
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./skillhub:/var/www/html:rw
+>>>>>>> 02b267acc52bd446a54de20fffa01343e86f0cc0
     depends_on:
       - app
     restart: unless-stopped
     environment:
+<<<<<<< HEAD
       - HTTPS_PORT=${HTTPS_PORT:-6041}
 
 volumes:
   app_data:
     driver: local
+=======
+      - HTTPS_PORT=${HTTPS_PORT:-5001}
+
+volumes:
+  app_data:
+    driver: local
+>>>>>>> 02b267acc52bd446a54de20fffa01343e86f0cc0
