@@ -16,6 +16,7 @@ COPY proxmox_install_automation/ ./proxmox_install_automation/
 COPY skillhub/ ./skillhub/
 COPY config.example.yaml ./config.example.yaml
 COPY setup.py ./setup.py
+COPY README.md ./README.md
 
 # Install the package
 RUN pip install --no-cache-dir -e .
