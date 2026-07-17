@@ -99,6 +99,15 @@
       difficulty: 'beginner',
       estimatedMinutes: 10,
       prerequisites: ['cleanup']
+    },
+    {
+      id: 'qcow2-image-building',
+      slug: 'qcow2-image-building',
+      titleEN: 'Proxmox qcow2 Image Building',
+      titleFR: 'Construction d\'images qcow2 Proxmox',
+      difficulty: 'intermediate',
+      estimatedMinutes: 30,
+      prerequisites: ['provisioning']
     }
   ];
 

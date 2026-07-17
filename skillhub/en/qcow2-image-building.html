@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Proxmox qcow2 Image Building</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="SkillHub home">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Language selector"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Learning progress">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% complete</span>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Lesson navigation">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Breadcrumb navigation"></div>
+
+      <h1>Proxmox qcow2 Image Building</h1>
+      <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>40 min</strong></p>
+
+      <!-- Overview -->
+      <h2>Overview</h2>
+      <p>
+        This lesson covers the Python SDK approach for building Proxmox VE qcow2 disk images
+        on OVH OpenStack. The pipeline orchestrates a multi-step workflow: create a temporary
+        SLES build instance, download the Proxmox ISO, convert it to qcow2 format using
+        <code>qemu-img</code>, create a snapshot, and upload the final image to OpenStack Glance.
+      </p>
+      <p>
+        By the end of this lesson, you will understand how to automate the entire image building
+        process using the OpenStack SDK Python API and the <code>build-image</code> CLI subcommand.
+      </p>
+
+      <!-- Prerequisites -->
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>OpenStack credentials (application credentials or username/password)</li>
+        <li>Python 3.9+ with <code>openstacksdk</code> installed</li>
+        <li>An SSH key pair registered in OpenStack</li>
+        <li>Access to a SLES base image in OpenStack Glance</li>
+        <li>Familiarity with <a href="provisioning.html" aria-label="Go to the Baremetal Provisioning lesson">Baremetal Provisioning</a> concepts</li>
+      </ul>
+
+      <!-- Step-by-step Workflow -->
+      <h2>Step-by-step Workflow</h2>
+      <p>
+        The image building pipeline executes these steps in order. Each step uses the
+        OpenStack SDK for Python to interact with cloud services.
+      </p>
+
+      <!-- Step 1: Instance Creation -->
+      <h3>Step 1: Create Build Instance</h3>
+      <p>
+        A temporary compute instance is created from a SLES base image. This instance
+        serves as the build environment where the ISO will be downloaded and converted.
+        The instance name follows the format <code>proxmox-installer-{unix_timestamp}</code>.
+      </p>
+      <pre><code class="language-python">import time
+import openstack
+
+# Connect using application credentials
+conn = openstack.connect(cloud='ovh')
+
+# Create the build instance
+timestamp = int(time.time())
+server = conn.compute.create_server(
+    name=f"proxmox-installer-{timestamp}",
+    image_id=conn.compute.find_image("SLES 15 SP5").id,
+    flavor_id=conn.compute.find_flavor("b2-30").id,
+    networks=[{"uuid": conn.network.find_network("Ext-Net").id}],
+    key_name="my-key"
+)
+
+# Wait for the instance to become ACTIVE (timeout: 600s)
+server = conn.compute.wait_for_server(server, wait=600)</code></pre>
+
+      <!-- Step 2: ISO Download -->
+      <h3>Step 2: Download Proxmox ISO</h3>
+      <p>
+        Once the instance is active and SSH connectivity is established, the Proxmox ISO
+        is downloaded to the build instance. The download is performed via SSH command
+        execution with integrity verification based on expected file size.
+      </p>
+      <pre><code class="language-python">import paramiko
+
+# Connect via SSH to the build instance
+ip_address = server.access_ipv4
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect(ip_address, username="sles", key_filename="~/.ssh/id_rsa")
+
+# Download the Proxmox ISO
+iso_url = "https://download.proxmox.com/iso/proxmox-ve_8.2-1.iso"
+download_cmd = f"wget -q -O /tmp/proxmox.iso {iso_url}"
+stdin, stdout, stderr = ssh.exec_command(download_cmd, timeout=1800)
+exit_status = stdout.channel.recv_exit_status()
+
+if exit_status != 0:
+    raise RuntimeError(f"ISO download failed: {stderr.read().decode()}")
+
+# Verify file size integrity
+stdin, stdout, stderr = ssh.exec_command("stat -c %s /tmp/proxmox.iso")
+actual_size = int(stdout.read().decode().strip())
+assert actual_size == expected_size, "ISO integrity check failed"</code></pre>
+
+      <!-- Step 3: Conversion to qcow2 -->
+      <h3>Step 3: Convert ISO to qcow2</h3>
+      <p>
+        The downloaded ISO is converted to qcow2 format using <code>qemu-img convert</code>.
+        This produces a disk image compatible with OpenStack Glance.
+      </p>
+      <pre><code class="language-python"># Convert ISO to qcow2 format on the build instance
+convert_cmd = "qemu-img convert -f raw -O qcow2 /tmp/proxmox.iso /tmp/proxmox.qcow2"
+stdin, stdout, stderr = ssh.exec_command(convert_cmd, timeout=600)
+exit_status = stdout.channel.recv_exit_status()
+
+if exit_status != 0:
+    error_output = stderr.read().decode()
+    raise RuntimeError(f"Conversion failed: {error_output}")
+
+# Verify output file exists and has content
+stdin, stdout, stderr = ssh.exec_command("stat -c %s /tmp/proxmox.qcow2")
+qcow2_size = int(stdout.read().decode().strip())
+assert qcow2_size > 0, "qcow2 output file is empty"</code></pre>
+
+      <!-- Step 4: Snapshot Creation -->
+      <h3>Step 4: Create Server Snapshot</h3>
+      <p>
+        A server snapshot captures the state of the build instance, including the converted
+        qcow2 file. The snapshot name follows the format
+        <code>proxmox-{version}-{YYYYMMDD-HHMMSS}</code>.
+      </p>
+      <pre><code class="language-python">from datetime import datetime, timezone
+
+# Create a snapshot of the build instance
+build_time = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+snapshot_name = f"proxmox-8.2-{build_time}"
+
+snapshot_id = conn.compute.create_server_image(
+    server.id,
+    snapshot_name
+)
+
+# Wait for the snapshot to become ACTIVE
+image = conn.image.wait_for_status(
+    conn.image.get_image(snapshot_id),
+    status="active",
+    wait=1800
+)</code></pre>
+
+      <!-- Step 5: Upload to Glance -->
+      <h3>Step 5: Upload to Glance</h3>
+      <p>
+        The final qcow2 image is uploaded to OpenStack Glance with the appropriate metadata.
+        Once uploaded, it becomes available as a bootable image in your project.
+      </p>
+      <pre><code class="language-python"># Upload the qcow2 image to Glance
+image = conn.image.create_image(
+    name="proxmox-ve-8.2-qcow2",
+    disk_format="qcow2",
+    container_format="bare",
+    visibility="private",
+    proxmox_version="8.2",
+    build_timestamp=datetime.now(timezone.utc).isoformat()
+)
+
+# Upload the image data
+conn.image.upload_image(
+    image,
+    data=open("/tmp/proxmox.qcow2", "rb")
+)
+
+# Wait for the image to reach ACTIVE status
+image = conn.image.wait_for_status(image, status="active", wait=1800)
+print(f"Image uploaded: {image.id} — {image.name}")</code></pre>
+
+      <!-- Configuration Reference -->
+      <h2>Configuration Reference</h2>
+      <p>
+        The build pipeline is configured via a YAML file. Below is the full schema
+        with all available parameters:
+      </p>
+      <pre><code class="language-yaml"># image-build-config.yaml
+image_build:
+  iso_url: "https://download.proxmox.com/iso/proxmox-ve_8.2-1.iso"
+  base_image_name: "SLES 15 SP5"
+  flavor_name: "b2-30"
+  target_image_name: "proxmox-ve-8.2-qcow2"
+  proxmox_version: "8.2"
+  target_visibility: "private"        # private | shared | public
+  build_timeout: 1800                 # seconds (60–7200)
+  iso_expected_size: 1200000000       # bytes (optional)
+  iso_download_dir: "/tmp"
+  iso_download_timeout: 1800
+  conversion_timeout: 600
+  snapshot_timeout: 1800
+
+openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+  application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
+
+instance:
+  ssh_key_name: "my-key"
+  ssh_key_path: "~/.ssh/id_rsa"
+  network_name: "Ext-Net"</code></pre>
+
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Required</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>iso_url</td><td>Yes</td><td>—</td><td>HTTPS URL to Proxmox ISO file</td></tr>
+          <tr><td>base_image_name</td><td>Yes</td><td>—</td><td>SLES image name in Glance</td></tr>
+          <tr><td>flavor_name</td><td>Yes</td><td>—</td><td>Compute flavor for build instance</td></tr>
+          <tr><td>target_image_name</td><td>Yes</td><td>—</td><td>Name for the final qcow2 image</td></tr>
+          <tr><td>target_visibility</td><td>No</td><td>private</td><td>Image visibility (private/shared/public)</td></tr>
+          <tr><td>build_timeout</td><td>No</td><td>1800</td><td>Build timeout in seconds (60–7200)</td></tr>
+          <tr><td>iso_expected_size</td><td>No</td><td>—</td><td>Expected ISO size in bytes for verification</td></tr>
+          <tr><td>iso_download_dir</td><td>No</td><td>/tmp</td><td>Download directory on build instance</td></tr>
+        </tbody>
+      </table>
+
+      <!-- CLI Usage -->
+      <h2>CLI Usage</h2>
+      <p>
+        The <code>build-image</code> subcommand triggers the full pipeline from the command line.
+        It integrates with automation scripts and CI/CD pipelines.
+      </p>
+      <pre><code class="language-bash"># Run the full image build pipeline
+proxmox-automation build-image --config image-build-config.yaml
+
+# Validate configuration without building (dry run)
+proxmox-automation build-image --config image-build-config.yaml --dry-run</code></pre>
+
+      <p>Exit codes:</p>
+      <ul>
+        <li><code>0</code> — Build completed successfully (image ID printed to stdout)</li>
+        <li><code>1</code> — Build or configuration failure (error message on stderr)</li>
+      </ul>
+
+      <p>Example output on success:</p>
+      <pre><code class="language-text">Image built successfully:
+  ID:   a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Name: proxmox-ve-8.2-qcow2</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
+        ✓ Mark as Complete
+      </button>
+      <div class="prev-next-nav" aria-label="Lesson navigation"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Project on Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Project license">License</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

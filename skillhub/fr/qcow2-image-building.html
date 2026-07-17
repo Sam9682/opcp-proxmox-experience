@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillHub — Construction d'images qcow2 Proxmox</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="logo"><a href="index.html" aria-label="Accueil SkillHub">SkillHub</a></div>
+    <div class="header-right">
+      <div class="lang-toggle" aria-label="Sélecteur de langue"></div>
+      <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Progression de l'apprentissage">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <span class="progress-text">0% terminé</span>
+      <button class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+  <div class="sidebar-overlay" aria-hidden="true"></div>
+  <div class="site-wrapper">
+    <aside class="sidebar" role="navigation" aria-label="Navigation des leçons">
+      <nav id="sidebar-nav"></nav>
+    </aside>
+    <main class="main-content" role="main">
+      <div class="breadcrumbs" aria-label="Fil d'Ariane"></div>
+
+      <h1>Construction d'images qcow2 Proxmox</h1>
+      <p class="lesson-meta">Difficulté : <strong>Avancé</strong> · Temps estimé : <strong>40 min</strong></p>
+
+      <!-- Vue d'ensemble -->
+      <h2>Vue d'ensemble</h2>
+      <p>
+        Cette leçon couvre l'approche Python SDK pour construire des images disque Proxmox VE
+        au format qcow2 sur OVH OpenStack. Le pipeline orchestre un workflow multi-étapes :
+        créer une instance SLES temporaire, télécharger l'ISO Proxmox, convertir au format
+        qcow2 avec <code>qemu-img</code>, créer un snapshot, et téléverser l'image finale
+        vers OpenStack Glance.
+      </p>
+      <p>
+        À la fin de cette leçon, vous comprendrez comment automatiser l'intégralité du
+        processus de construction d'image avec l'API Python OpenStack SDK et la sous-commande
+        CLI <code>build-image</code>.
+      </p>
+
+      <!-- Prérequis -->
+      <h2>Prérequis</h2>
+      <ul>
+        <li>Identifiants OpenStack (application credentials ou nom d'utilisateur/mot de passe)</li>
+        <li>Python 3.9+ avec <code>openstacksdk</code> installé</li>
+        <li>Une paire de clés SSH enregistrée dans OpenStack</li>
+        <li>Accès à une image SLES de base dans OpenStack Glance</li>
+        <li>Familiarité avec les concepts de <a href="provisioning.html" aria-label="Aller à la leçon Provisionnement Baremetal">Provisionnement Baremetal</a></li>
+      </ul>
+
+      <!-- Workflow étape par étape -->
+      <h2>Workflow étape par étape</h2>
+      <p>
+        Le pipeline de construction d'image exécute ces étapes dans l'ordre. Chaque étape
+        utilise le SDK OpenStack pour Python pour interagir avec les services cloud.
+      </p>
+
+      <!-- Étape 1 : Création d'instance -->
+      <h3>Étape 1 : Création de l'instance de build</h3>
+      <p>
+        Une instance de calcul temporaire est créée à partir d'une image SLES de base.
+        Cette instance sert d'environnement de build où l'ISO sera téléchargé et converti.
+        Le nom de l'instance suit le format <code>proxmox-installer-{unix_timestamp}</code>.
+      </p>
+      <pre><code class="language-python">import time
+import openstack
+
+# Connexion avec les application credentials
+conn = openstack.connect(cloud='ovh')
+
+# Créer l'instance de build
+timestamp = int(time.time())
+server = conn.compute.create_server(
+    name=f"proxmox-installer-{timestamp}",
+    image_id=conn.compute.find_image("SLES 15 SP5").id,
+    flavor_id=conn.compute.find_flavor("b2-30").id,
+    networks=[{"uuid": conn.network.find_network("Ext-Net").id}],
+    key_name="my-key"
+)
+
+# Attendre que l'instance devienne ACTIVE (timeout : 600s)
+server = conn.compute.wait_for_server(server, wait=600)</code></pre>
+
+      <!-- Étape 2 : Téléchargement ISO -->
+      <h3>Étape 2 : Téléchargement de l'ISO Proxmox</h3>
+      <p>
+        Une fois l'instance active et la connectivité SSH établie, l'ISO Proxmox est
+        téléchargé sur l'instance de build. Le téléchargement est effectué via une commande
+        SSH avec vérification d'intégrité basée sur la taille de fichier attendue.
+      </p>
+      <pre><code class="language-python">import paramiko
+
+# Connexion SSH à l'instance de build
+ip_address = server.access_ipv4
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect(ip_address, username="sles", key_filename="~/.ssh/id_rsa")
+
+# Télécharger l'ISO Proxmox
+iso_url = "https://download.proxmox.com/iso/proxmox-ve_8.2-1.iso"
+download_cmd = f"wget -q -O /tmp/proxmox.iso {iso_url}"
+stdin, stdout, stderr = ssh.exec_command(download_cmd, timeout=1800)
+exit_status = stdout.channel.recv_exit_status()
+
+if exit_status != 0:
+    raise RuntimeError(f"Échec du téléchargement ISO : {stderr.read().decode()}")
+
+# Vérifier l'intégrité par la taille du fichier
+stdin, stdout, stderr = ssh.exec_command("stat -c %s /tmp/proxmox.iso")
+actual_size = int(stdout.read().decode().strip())
+assert actual_size == expected_size, "Échec de la vérification d'intégrité ISO"</code></pre>
+
+      <!-- Étape 3 : Conversion en qcow2 -->
+      <h3>Étape 3 : Conversion de l'ISO en qcow2</h3>
+      <p>
+        L'ISO téléchargé est converti au format qcow2 avec <code>qemu-img convert</code>.
+        Cela produit une image disque compatible avec OpenStack Glance.
+      </p>
+      <pre><code class="language-python"># Convertir l'ISO au format qcow2 sur l'instance de build
+convert_cmd = "qemu-img convert -f raw -O qcow2 /tmp/proxmox.iso /tmp/proxmox.qcow2"
+stdin, stdout, stderr = ssh.exec_command(convert_cmd, timeout=600)
+exit_status = stdout.channel.recv_exit_status()
+
+if exit_status != 0:
+    error_output = stderr.read().decode()
+    raise RuntimeError(f"Échec de la conversion : {error_output}")
+
+# Vérifier que le fichier de sortie existe et a un contenu
+stdin, stdout, stderr = ssh.exec_command("stat -c %s /tmp/proxmox.qcow2")
+qcow2_size = int(stdout.read().decode().strip())
+assert qcow2_size > 0, "Le fichier qcow2 de sortie est vide"</code></pre>
+
+      <!-- Étape 4 : Création du snapshot -->
+      <h3>Étape 4 : Création du snapshot serveur</h3>
+      <p>
+        Un snapshot du serveur capture l'état de l'instance de build, y compris le fichier
+        qcow2 converti. Le nom du snapshot suit le format
+        <code>proxmox-{version}-{AAAAMMJJ-HHMMSS}</code>.
+      </p>
+      <pre><code class="language-python">from datetime import datetime, timezone
+
+# Créer un snapshot de l'instance de build
+build_time = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+snapshot_name = f"proxmox-8.2-{build_time}"
+
+snapshot_id = conn.compute.create_server_image(
+    server.id,
+    snapshot_name
+)
+
+# Attendre que le snapshot devienne ACTIVE
+image = conn.image.wait_for_status(
+    conn.image.get_image(snapshot_id),
+    status="active",
+    wait=1800
+)</code></pre>
+
+      <!-- Étape 5 : Upload vers Glance -->
+      <h3>Étape 5 : Upload vers Glance</h3>
+      <p>
+        L'image qcow2 finale est téléversée vers OpenStack Glance avec les métadonnées
+        appropriées. Une fois uploadée, elle devient disponible comme image bootable
+        dans votre projet.
+      </p>
+      <pre><code class="language-python"># Téléverser l'image qcow2 vers Glance
+image = conn.image.create_image(
+    name="proxmox-ve-8.2-qcow2",
+    disk_format="qcow2",
+    container_format="bare",
+    visibility="private",
+    proxmox_version="8.2",
+    build_timestamp=datetime.now(timezone.utc).isoformat()
+)
+
+# Téléverser les données de l'image
+conn.image.upload_image(
+    image,
+    data=open("/tmp/proxmox.qcow2", "rb")
+)
+
+# Attendre que l'image atteigne le statut ACTIVE
+image = conn.image.wait_for_status(image, status="active", wait=1800)
+print(f"Image uploadée : {image.id} — {image.name}")</code></pre>
+
+      <!-- Référence de configuration -->
+      <h2>Référence de configuration</h2>
+      <p>
+        Le pipeline de build est configuré via un fichier YAML. Voici le schéma complet
+        avec tous les paramètres disponibles :
+      </p>
+      <pre><code class="language-yaml"># image-build-config.yaml
+image_build:
+  iso_url: "https://download.proxmox.com/iso/proxmox-ve_8.2-1.iso"
+  base_image_name: "SLES 15 SP5"
+  flavor_name: "b2-30"
+  target_image_name: "proxmox-ve-8.2-qcow2"
+  proxmox_version: "8.2"
+  target_visibility: "private"        # private | shared | public
+  build_timeout: 1800                 # secondes (60–7200)
+  iso_expected_size: 1200000000       # octets (optionnel)
+  iso_download_dir: "/tmp"
+  iso_download_timeout: 1800
+  conversion_timeout: 600
+  snapshot_timeout: 1800
+
+openstack:
+  auth_url: "https://auth.cloud.ovh.net/v3"
+  region: "GRA9"
+  auth_type: "v3applicationcredential"
+  application_credential_id: "${OS_APPLICATION_CREDENTIAL_ID}"
+  application_credential_secret: "${OS_APPLICATION_CREDENTIAL_SECRET}"
+
+instance:
+  ssh_key_name: "my-key"
+  ssh_key_path: "~/.ssh/id_rsa"
+  network_name: "Ext-Net"</code></pre>
+
+      <table>
+        <thead>
+          <tr><th>Paramètre</th><th>Requis</th><th>Défaut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>iso_url</td><td>Oui</td><td>—</td><td>URL HTTPS du fichier ISO Proxmox</td></tr>
+          <tr><td>base_image_name</td><td>Oui</td><td>—</td><td>Nom de l'image SLES dans Glance</td></tr>
+          <tr><td>flavor_name</td><td>Oui</td><td>—</td><td>Flavor de calcul pour l'instance de build</td></tr>
+          <tr><td>target_image_name</td><td>Oui</td><td>—</td><td>Nom de l'image qcow2 finale</td></tr>
+          <tr><td>target_visibility</td><td>Non</td><td>private</td><td>Visibilité de l'image (private/shared/public)</td></tr>
+          <tr><td>build_timeout</td><td>Non</td><td>1800</td><td>Timeout de build en secondes (60–7200)</td></tr>
+          <tr><td>iso_expected_size</td><td>Non</td><td>—</td><td>Taille ISO attendue en octets pour vérification</td></tr>
+          <tr><td>iso_download_dir</td><td>Non</td><td>/tmp</td><td>Répertoire de téléchargement sur l'instance</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Utilisation CLI -->
+      <h2>Utilisation CLI</h2>
+      <p>
+        La sous-commande <code>build-image</code> déclenche le pipeline complet depuis la
+        ligne de commande. Elle s'intègre aux scripts d'automatisation et aux pipelines CI/CD.
+      </p>
+      <pre><code class="language-bash"># Exécuter le pipeline complet de construction d'image
+proxmox-automation build-image --config image-build-config.yaml
+
+# Valider la configuration sans construire (dry run)
+proxmox-automation build-image --config image-build-config.yaml --dry-run</code></pre>
+
+      <p>Codes de sortie :</p>
+      <ul>
+        <li><code>0</code> — Build terminé avec succès (ID de l'image affiché sur stdout)</li>
+        <li><code>1</code> — Échec du build ou de la configuration (message d'erreur sur stderr)</li>
+      </ul>
+
+      <p>Exemple de sortie en cas de succès :</p>
+      <pre><code class="language-text">Image built successfully:
+  ID:   a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  Name: proxmox-ve-8.2-qcow2</code></pre>
+
+      <button class="mark-complete-btn" type="button" aria-label="Marquer cette leçon comme terminée">
+        ✓ Marquer comme terminé
+      </button>
+      <div class="prev-next-nav" aria-label="Navigation entre les leçons"></div>
+    </main>
+  </div>
+  <footer class="site-footer" role="contentinfo">
+    <a href="https://forgejo.example.com/opcp-proxmox-install" aria-label="Projet sur Forgejo">Forgejo</a> ·
+    <a href="../../LICENSE" aria-label="Licence du projet">Licence</a> ·
+    SkillHub Training — OVHcloud
+  </footer>
+  <script src="../assets/js/lessons.js"></script>
+  <script src="../assets/js/i18n.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+  <script src="../assets/js/code-highlight.js"></script>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

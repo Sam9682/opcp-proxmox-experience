@@ -10,6 +10,9 @@ paramiko>=2.11.0
 # Configuration management
 pyyaml>=6.0
 
+# Web framework
+flask>=2.3.0
+
 # HTTP requests
 requests>=2.28.0
 

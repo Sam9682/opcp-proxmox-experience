@@ -14,7 +14,22 @@ from .models import BuildStatus
 from .orchestrator.builder import ProxmoxBuilder
 
 
-@click.command()
+@click.group(invoke_without_command=True)
+@click.pass_context
+def main(ctx: click.Context) -> None:
+    """
+    Proxmox VE Installation on OVH Baremetal OpenStack.
+
+    Automates the deployment of Proxmox VE with GPU PCI passthrough
+    on OVH OpenStack baremetal instances, and provides image building
+    capabilities.
+    """
+    # If no subcommand is given, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
+
+@main.command()
 @click.option(
     "--config", "-c",
     required=True,
@@ -57,7 +72,7 @@ from .orchestrator.builder import ProxmoxBuilder
     default=None,
     help="Path to log file.",
 )
-def main(
+def install(
     config: str,
     debug: bool,
     dry_run: bool,
@@ -67,7 +82,7 @@ def main(
     log_file: Optional[str],
 ) -> None:
     """
-    Proxmox VE Installation on OVH Baremetal OpenStack.
+    Install Proxmox VE on OVH Baremetal OpenStack.
 
     Automates the deployment of Proxmox VE with GPU PCI passthrough
     on OVH OpenStack baremetal instances.
@@ -148,6 +163,66 @@ def main(
         logger.exception("Unexpected error: %s", str(e))
         click.echo(f"Unexpected error: {e}", err=True)
         sys.exit(2)
+
+
+@main.command("build-image")
+@click.option(
+    "--config", "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to YAML configuration file for image building.",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Validate configuration and exit without building.",
+)
+def build_image(config: str, dry_run: bool) -> None:
+    """
+    Build a Proxmox VE qcow2 image on OpenStack.
+
+    Orchestrates the full image build pipeline: authenticate, create
+    a temporary build instance, download the Proxmox ISO, convert to
+    qcow2, snapshot, upload to Glance, and cleanup.
+    """
+    from .image_builder import (
+        ImageBuilder,
+        ImageBuildConfigValidator,
+        load_image_build_config,
+    )
+    from .image_builder.exceptions import ConfigurationError
+
+    try:
+        # Load configuration from YAML
+        image_config = load_image_build_config(config)
+
+        # Validate configuration
+        validator = ImageBuildConfigValidator()
+        validator.validate(image_config)
+
+        if dry_run:
+            click.echo("Configuration valid")
+            sys.exit(0)
+
+        # Execute the build pipeline
+        builder = ImageBuilder()
+        result = builder.build(image_config)
+
+        # Print success output to stdout
+        click.echo(f"Image ID: {result.image_id}")
+        click.echo(f"Image Name: {result.image_name}")
+        sys.exit(0)
+
+    except ConfigurationError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except ProxmoxAutomationError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

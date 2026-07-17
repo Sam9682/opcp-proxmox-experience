@@ -12,6 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
+COPY app.py ./app.py
+COPY src/ ./src/
 COPY proxmox_install_automation/ ./proxmox_install_automation/
 COPY skillhub/ ./skillhub/
 COPY config.example.yaml ./config.example.yaml
@@ -31,4 +33,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
 # Run the application
-CMD ["python", "-m", "proxmox_install_automation.cli", "serve", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["python", "app.py"]
