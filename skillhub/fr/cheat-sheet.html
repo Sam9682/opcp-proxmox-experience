@@ -33,25 +33,28 @@
 
       <h2>CLI de l'automatisation</h2>
       <pre><code class="language-bash"># Build automatisé complet
-proxmox-install --config config.yaml
+proxmox-install install --config config.yaml
 
 # Dry run (validation uniquement)
-proxmox-install --config config.yaml --dry-run
+proxmox-install install --config config.yaml --dry-run
 
 # Sans GPU passthrough
-proxmox-install --config config.yaml --skip-gpu
+proxmox-install install --config config.yaml --skip-gpu
 
 # Sans création de VM test
-proxmox-install --config config.yaml --skip-vm
+proxmox-install install --config config.yaml --skip-vm
 
 # Mode debug
-proxmox-install --config config.yaml --debug
+proxmox-install install --config config.yaml --debug
 
 # Nettoyage uniquement
-proxmox-install --config config.yaml --cleanup-only
+proxmox-install install --config config.yaml --cleanup-only
 
 # Avec fichier de log
-proxmox-install --config config.yaml --log-file build.log</code></pre>
+proxmox-install install --config config.yaml --log-file build.log
+
+# Construire l'image qcow2 (sous-commande build-image)
+proxmox-install build-image --config config.yaml</code></pre>
 
       <h2>Commandes OpenStack</h2>
       <pre><code class="language-bash"># Créer une instance

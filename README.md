@@ -113,7 +113,7 @@ test_vm:
 2. **Run the installation**:
 
 ```bash
-proxmox-install --config config.yaml
+proxmox-install install --config config.yaml
 ```
 
 3. **Access Proxmox Web UI**:

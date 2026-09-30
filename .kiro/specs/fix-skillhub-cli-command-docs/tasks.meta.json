@@ -1,0 +1,251 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Correct `skillhub/en/index.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779414967
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779424936
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779616064
+      }
+    ],
+    "1.2 Correct `skillhub/fr/index.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779415203
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779428939
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779617427
+      }
+    ],
+    "2.1 Correct the seven command lines in `skillhub/en/cheat-sheet.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779415609
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779430296
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779618803
+      }
+    ],
+    "2.2 Add the build-image mention to `skillhub/en/cheat-sheet.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779415757
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779910760
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779968182
+      }
+    ],
+    "2.3 Correct the seven command lines in `skillhub/fr/cheat-sheet.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779415980
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779431680
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779620191
+      }
+    ],
+    "2.4 Add the parallel build-image mention to `skillhub/fr/cheat-sheet.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779416214
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779911758
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779969662
+      }
+    ],
+    "3.1 Correct `skillhub/en/prerequisites.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779416391
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779433015
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779621521
+      }
+    ],
+    "3.2 Correct `skillhub/fr/prerequisites.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779416625
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779626040
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779901804
+      }
+    ],
+    "4.1 Correct `skillhub/en/cleanup.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779416823
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779627344
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779903157
+      }
+    ],
+    "4.2 Correct `skillhub/fr/cleanup.html`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779416964
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779628718
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779904596
+      }
+    ],
+    "5.1 Correct the affected command in the README fenced code block": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779417125
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779630051
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779905723
+      }
+    ],
+    "6.1 Run the grep-based verification checks from the design": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779417257
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779977928
+      },
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790781150913
+      }
+    ],
+    "1. Correct command examples in the index lab pages": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779617651
+      }
+    ],
+    "3. Correct command examples in the prerequisites lab pages": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779901977
+      }
+    ],
+    "4. Correct command examples in the cleanup lab pages": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779904809
+      }
+    ],
+    "5. Correct the command example in `README.md`": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779905853
+      }
+    ],
+    "2. Correct command examples and add build-image mention in the cheat-sheet pages": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790779971517
+      }
+    ],
+    "6. Final verification checkpoint": [
+      {
+        "executionId": "943885d3-d0a5-4f3b-8779-b09306f9b1c7",
+        "chatSessionId": "sess_3b01c666-d923-41b7-a74c-4815491aa340",
+        "timestamp": 1790781151148
+      }
+    ]
+  }
+}

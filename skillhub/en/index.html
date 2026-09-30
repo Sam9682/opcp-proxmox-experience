@@ -64,7 +64,7 @@
       <h2>Quick Start</h2>
       <p>Install the automation tool and run the full workflow:</p>
       <pre><code class="language-bash"># Clone the project
-git clone https://forgejo.example.com/opcp-proxmox-install.git
+git clone https://github.com/Sam9682/opcp-proxmox-experience.git
 cd opcp-proxmox-install
 
 # Install in a virtual environment
@@ -73,10 +73,10 @@ source .venv/bin/activate
 pip install -e .
 
 # Run the automation (dry-run first)
-proxmox-install --config config.yaml --dry-run
+proxmox-install install --config config.yaml --dry-run
 
 # Execute the full build
-proxmox-install --config config.yaml</code></pre>
+proxmox-install install --config config.yaml</code></pre>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
         ✓ Mark as Complete
