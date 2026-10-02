@@ -1,9 +1,9 @@
 services:
-  app:
+  backend-component:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${NAME_OF_APPLICATION:-opcp-proxmox-experience}-app-${USER_ID:-0}-${HTTP_PORT:-5000}
+    container_name: ${NAME_OF_APPLICATION:-opcp-proxmox-experience}-backend-component-${USER_ID:-0}-${HTTP_PORT:-5000}
     ports:
       - "${HTTP_PORT:-5000}:5000"
     environment:
@@ -24,7 +24,7 @@ services:
       retries: 3
       start_period: 40s
 
-  nginx:
+  frontend-component:
     image: nginx:alpine
     container_name: ${NAME_OF_APPLICATION:-opcp-proxmox-experience}-nginx-${USER_ID:-0}-${HTTPS_PORT:-5001}
     ports:
@@ -34,7 +34,7 @@ services:
       - ./ssl:/etc/nginx/ssl:ro
       - ./skillhub:/var/www/html:rw
     depends_on:
-      - app
+      - backend-component
     restart: unless-stopped
     environment:
       - HTTPS_PORT=${HTTPS_PORT:-5001}
