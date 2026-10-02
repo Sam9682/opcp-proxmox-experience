@@ -26,7 +26,7 @@ services:
 
   frontend-component:
     image: nginx:alpine
-    container_name: ${NAME_OF_APPLICATION:-opcp-proxmox-experience}-nginx-${USER_ID:-0}-${HTTPS_PORT:-5001}
+    container_name: ${NAME_OF_APPLICATION:-opcp-proxmox-experience}-backend-component-${USER_ID:-0}-${HTTPS_PORT:-5001}
     ports:
       - "${HTTPS_PORT:-5001}:443"
     volumes:
