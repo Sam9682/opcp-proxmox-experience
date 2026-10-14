@@ -1,0 +1,365 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Read the source files and lock in current structure": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966032490
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966042286
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966104935
+      }
+    ],
+    "2.1 Insert the Two_Approaches_Intro block": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966032656
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966108655
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966164041
+      }
+    ],
+    "2.2 Wrap existing SDK content under `h2` \"Approach A — OpenStack SDK pipeline\" and demote headings": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966032766
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966167749
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966246272
+      }
+    ],
+    "3. Checkpoint - verify intro and Approach A structure": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966032868
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966260088
+      }
+    ],
+    "4.1 Add `h2` \"Approach B — Manual KVM/QEMU bare-metal build\" and B1 Overview & architecture": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033020
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966264633
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966476655
+      }
+    ],
+    "4.2 Add B2 Prerequisites": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033138
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966480366
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966554421
+      }
+    ],
+    "4.3 Add B3 Prepare the Proxmox ISO and B4 Create the 64G qcow2 disk": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033266
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966559104
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966636840
+      }
+    ],
+    "4.4 Add B5 Create the build VM": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033372
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966640412
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966729045
+      }
+    ],
+    "5.1 Add B6 Install Proxmox VE": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033482
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966733686
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967348224
+      }
+    ],
+    "5.2 Add B7 Generic config (network, hostname, no cluster)": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033602
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967352009
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967457503
+      }
+    ],
+    "5.3 Add B8 Clean the image": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033729
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967461107
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967736736
+      }
+    ],
+    "5.4 Add B9 Shutdown & remove the temp VM": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033845
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967740414
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967819674
+      }
+    ],
+    "6. Checkpoint - verify Approach B B1–B9": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966033952
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967824572
+      }
+    ],
+    "7.1 Add B10 Verify & compress and B11 Test boot": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966034066
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967828801
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967884146
+      }
+    ],
+    "7.2 Add B12 Import to Glance": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966034322
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967887836
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967955066
+      }
+    ],
+    "7.3 Add B13 Bare-metal UEFI & deploy": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966034491
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967959295
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968018309
+      }
+    ],
+    "7.4 Add B14 Post-deployment, recommendations & evolution": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966034733
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968022493
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968094593
+      }
+    ],
+    "8.1 Ensure completion button and nav are last in `main`": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966034911
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968099720
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968137925
+      }
+    ],
+    "8.2 Structural inspection of the whole document": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966035056
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968141803
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791969138254
+      }
+    ],
+    "9. Final checkpoint - full-page review": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966035268
+      },
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791969143067
+      }
+    ],
+    "2. Add the \"Two approaches\" intro and establish Approach A as a top-level section": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966246472
+      }
+    ],
+    "4. Author Approach B top-level section and foundational subsections (B1–B5)": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791966729294
+      }
+    ],
+    "5. Author Approach B install, config, and cleanup subsections (B6–B9)": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791967819878
+      }
+    ],
+    "7. Author Approach B verification, deployment, and evolution subsections (B10–B14)": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791968094866
+      }
+    ],
+    "8. Finalize placement and verify structural integrity": [
+      {
+        "executionId": "3c803700-7d5d-490f-b3d5-2b265388ecc1",
+        "chatSessionId": "sess_f32ba9d3-02b4-4cdc-b9e9-cb06643609dc",
+        "timestamp": 1791969138455
+      }
+    ]
+  }
+}

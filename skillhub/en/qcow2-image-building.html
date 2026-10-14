@@ -29,8 +29,24 @@
       <h1>Proxmox qcow2 Image Building</h1>
       <p class="lesson-meta">Difficulty: <strong>Advanced</strong> · Estimated time: <strong>40 min</strong></p>
 
+      <!-- Two approaches intro -->
+      <p>
+        This lesson presents two parallel approaches for building a Proxmox VE qcow2 image.
+        <strong>Approach A</strong> is the OpenStack SDK Python pipeline (Proxmox VE 8.2): an
+        automated workflow that drives a temporary build instance from Python and uploads the
+        result to OpenStack Glance.
+      </p>
+      <p>
+        <strong>Approach B</strong> is the manual KVM/QEMU bare-metal build (Proxmox VE 9.2):
+        you build a generic golden image by hand, import it into Glance, and deploy it to bare
+        metal through OPCP/Ironic. Choose Approach A for a hands-off, scripted build, or
+        Approach B when you need full control over a reusable bare-metal image.
+      </p>
+
+      <h2>Approach A — OpenStack SDK pipeline</h2>
+
       <!-- Overview -->
-      <h2>Overview</h2>
+      <h3>Overview</h3>
       <p>
         This lesson covers the Python SDK approach for building Proxmox VE qcow2 disk images
         on OVH OpenStack. The pipeline orchestrates a multi-step workflow: create a temporary
@@ -43,7 +59,7 @@
       </p>
 
       <!-- Prerequisites -->
-      <h2>Prerequisites</h2>
+      <h3>Prerequisites</h3>
       <ul>
         <li>OpenStack credentials (application credentials or username/password)</li>
         <li>Python 3.9+ with <code>openstacksdk</code> installed</li>
@@ -53,14 +69,14 @@
       </ul>
 
       <!-- Step-by-step Workflow -->
-      <h2>Step-by-step Workflow</h2>
+      <h3>Step-by-step Workflow</h3>
       <p>
         The image building pipeline executes these steps in order. Each step uses the
         OpenStack SDK for Python to interact with cloud services.
       </p>
 
       <!-- Step 1: Instance Creation -->
-      <h3>Step 1: Create Build Instance</h3>
+      <h4>Step 1: Create Build Instance</h4>
       <p>
         A temporary compute instance is created from a SLES base image. This instance
         serves as the build environment where the ISO will be downloaded and converted.
@@ -86,7 +102,7 @@ server = conn.compute.create_server(
 server = conn.compute.wait_for_server(server, wait=600)</code></pre>
 
       <!-- Step 2: ISO Download -->
-      <h3>Step 2: Download Proxmox ISO</h3>
+      <h4>Step 2: Download Proxmox ISO</h4>
       <p>
         Once the instance is active and SSH connectivity is established, the Proxmox ISO
         is downloaded to the build instance. The download is performed via SSH command
@@ -115,7 +131,7 @@ actual_size = int(stdout.read().decode().strip())
 assert actual_size == expected_size, "ISO integrity check failed"</code></pre>
 
       <!-- Step 3: Conversion to qcow2 -->
-      <h3>Step 3: Convert ISO to qcow2</h3>
+      <h4>Step 3: Convert ISO to qcow2</h4>
       <p>
         The downloaded ISO is converted to qcow2 format using <code>qemu-img convert</code>.
         This produces a disk image compatible with OpenStack Glance.
@@ -135,7 +151,7 @@ qcow2_size = int(stdout.read().decode().strip())
 assert qcow2_size > 0, "qcow2 output file is empty"</code></pre>
 
       <!-- Step 4: Snapshot Creation -->
-      <h3>Step 4: Create Server Snapshot</h3>
+      <h4>Step 4: Create Server Snapshot</h4>
       <p>
         A server snapshot captures the state of the build instance, including the converted
         qcow2 file. The snapshot name follows the format
@@ -160,7 +176,7 @@ image = conn.image.wait_for_status(
 )</code></pre>
 
       <!-- Step 5: Upload to Glance -->
-      <h3>Step 5: Upload to Glance</h3>
+      <h4>Step 5: Upload to Glance</h4>
       <p>
         The final qcow2 image is uploaded to OpenStack Glance with the appropriate metadata.
         Once uploaded, it becomes available as a bootable image in your project.
@@ -186,7 +202,7 @@ image = conn.image.wait_for_status(image, status="active", wait=1800)
 print(f"Image uploaded: {image.id} — {image.name}")</code></pre>
 
       <!-- Configuration Reference -->
-      <h2>Configuration Reference</h2>
+      <h3>Configuration Reference</h3>
       <p>
         The build pipeline is configured via a YAML file. Below is the full schema
         with all available parameters:
@@ -235,7 +251,7 @@ instance:
       </table>
 
       <!-- CLI Usage -->
-      <h2>CLI Usage</h2>
+      <h3>CLI Usage</h3>
       <p>
         The <code>build-image</code> subcommand triggers the full pipeline from the command line.
         It integrates with automation scripts and CI/CD pipelines.
@@ -256,6 +272,385 @@ proxmox-automation build-image --config image-build-config.yaml --dry-run</code>
       <pre><code class="language-text">Image built successfully:
   ID:   a1b2c3d4-e5f6-7890-abcd-ef1234567890
   Name: proxmox-ve-8.2-qcow2</code></pre>
+
+      <h2>Approach B — Manual KVM/QEMU bare-metal build</h2>
+
+      <!-- B1 Overview & architecture -->
+      <h3>Overview &amp; architecture</h3>
+      <p>
+        The objective is to build a generic, reusable Proxmox VE whole-disk qcow2 golden image,
+        import it into OpenStack Glance, and deploy it to physical servers through OPCP / Ironic
+        bare metal. A single image can then provision many Proxmox servers.
+      </p>
+      <p>
+        The image uses a GPT partition table, UEFI boot, and keeps the system disk separate from
+        future data disks. Server-specific settings — hostname, IP addresses, network interfaces,
+        bridges and bonds, Proxmox cluster, ZFS / Ceph storage, and Corosync — are applied
+        <em>after</em> deployment, not baked into the golden image.
+      </p>
+      <p>The end-to-end pipeline:</p>
+      <pre><code class="language-text">Proxmox VE ISO
+      |
+      v
++---------------------------+
+| Temporary KVM/QEMU VM     |
+|   UEFI                    |
+|   8 vCPU                  |
+|   16 GB RAM               |
+|   64 GB qcow2 disk        |
++-------------+-------------+
+              | Proxmox installation
+              v
++---------------------------+
+| proxmox-opcp.qcow2        |
+|   GPT                     |
+|   EFI                     |
+|   Debian                  |
+|   Proxmox VE              |
++-------------+-------------+
+              | Glance import
+              v
++---------------------------+
+| OPCP / OpenStack / Ironic |
++-------------+-------------+
+              |
+              v
+       Bare Metal Server</code></pre>
+      <p>
+        Use the standard x86_64 / amd64 build for Intel Xeon or AMD EPYC servers (for example
+        <code>proxmox-ve_9.2-1.iso</code>). The ARM64 version is only for servers with an ARM64
+        processor.
+      </p>
+
+      <!-- B2 Prerequisites -->
+      <h3>Prerequisites</h3>
+      <p>
+        The build host runs Debian or Ubuntu and provides the full KVM/QEMU toolchain: QEMU,
+        libvirt, <code>virt-install</code>, and <code>qemu-img</code>, together with UEFI / OVMF
+        firmware support. KVM hardware acceleration is strongly preferred so the temporary build
+        VM runs at near-native speed.
+      </p>
+      <p>Install the required packages:</p>
+      <pre><code class="language-bash">apt update
+apt install -y qemu-utils qemu-system-x86 libvirt-daemon-system libvirt-clients virtinst ovmf</code></pre>
+      <p>Confirm the key tools are available:</p>
+      <pre><code class="language-bash">qemu-img --version
+virsh --version
+virt-install --version</code></pre>
+
+      <!-- B3 Prepare the Proxmox ISO -->
+      <h3>Prepare the Proxmox ISO</h3>
+      <p>
+        Copy the Proxmox VE 9.2 installer ISO into the libvirt images directory so the build VM
+        can mount it, set read permissions so libvirt can access it, and verify the file is in
+        place:
+      </p>
+      <pre><code class="language-bash">cp proxmox-ve_9.2-1.iso /var/lib/libvirt/images/
+chmod 644 /var/lib/libvirt/images/proxmox-ve_9.2-1.iso
+ls -lh /var/lib/libvirt/images/proxmox-ve_9.2-1.iso</code></pre>
+
+      <!-- B4 Create the 64 GB qcow2 disk -->
+      <h3>Create the 64 GB qcow2 disk</h3>
+      <p>
+        Create the 64 GB system disk that will hold the Proxmox installation, then inspect it to
+        confirm the format and virtual size:
+      </p>
+      <pre><code class="language-bash">qemu-img create -f qcow2 /var/lib/libvirt/images/proxmox-opcp.qcow2 64G
+qemu-img info /var/lib/libvirt/images/proxmox-opcp.qcow2</code></pre>
+      <p>The <code>qemu-img info</code> output should report the expected format and size:</p>
+      <pre><code class="language-text">file format: qcow2
+virtual size: 64 GiB</code></pre>
+      <p>
+        This 64 GB disk is the Proxmox system disk only. Future data disks, ZFS pools, or Ceph
+        disks must <strong>not</strong> be included in this image — they are provisioned
+        separately after the node is deployed.
+      </p>
+
+      <!-- B5 Create the build VM -->
+      <h3>Create the build VM</h3>
+      <p>
+        Create a temporary build VM with 8 vCPU, 16 GB RAM, and UEFI boot, attaching the VirtIO
+        qcow2 disk and a VirtIO network adapter, and booting from the Proxmox VE 9.2 installer ISO:
+      </p>
+      <pre><code class="language-bash">virt-install \
+  --name proxmox-image-builder \
+  --memory 16384 \
+  --vcpus 8 \
+  --cpu host \
+  --os-variant debian13 \
+  --disk path=/var/lib/libvirt/images/proxmox-opcp.qcow2,format=qcow2,bus=virtio \
+  --cdrom /var/lib/libvirt/images/proxmox-ve_9.2-1.iso \
+  --network network=default,model=virtio \
+  --boot uefi</code></pre>
+      <p>
+        If a dedicated host bridge is available, attach the build VM to it instead of the default
+        libvirt network. Replace the default network option:
+      </p>
+      <pre><code class="language-bash">--network network=default,model=virtio</code></pre>
+      <p>with the bridge option:</p>
+      <pre><code class="language-bash">--network bridge=br0,model=virtio</code></pre>
+
+      <!-- B6 Install Proxmox VE -->
+      <h3>Install Proxmox VE</h3>
+      <p>
+        Install Proxmox VE normally from the installer ISO. For a bare-metal golden image, choose
+        UEFI boot, a GPT partition table, an ext4 / LVM filesystem, and the VirtIO disk as the
+        installation target:
+      </p>
+      <pre><code class="language-text">Boot       : UEFI
+Partition  : GPT
+Filesystem : ext4 / LVM
+Disk       : VirtIO disk</code></pre>
+      <p>
+        Use a simple system-disk layout: an EFI partition plus an LVM volume holding the root, swap,
+        and data logical volumes.
+      </p>
+      <pre><code class="language-text">/dev/vda
+ |
+ +-- EFI
+ |
+ +-- LVM
+      |
+      +-- root
+      +-- swap
+      +-- data</code></pre>
+      <p>
+        Avoid ZFS for the template system disk; physical storage disks are configured after the
+        server is deployed.
+      </p>
+
+      <!-- B7 Generic configuration (network, hostname, no cluster) -->
+      <h3>Generic configuration (network, hostname, no cluster)</h3>
+      <p>
+        The image must stay generic because interface names differ between the build VM (for example
+        <code>ens18</code>) and the final server (for example <code>eno1</code> or
+        <code>ens1f0np0</code>). Before finalizing the template, reduce
+        <code>/etc/network/interfaces</code> to a minimal loopback-only configuration:
+      </p>
+      <pre><code class="language-text">auto lo
+iface lo inet loopback</code></pre>
+      <p>
+        The final network configuration (management interface, <code>vmbr0</code> bridge, bonds,
+        VLANs, and the storage, cluster, and migration networks) is applied after deployment.
+      </p>
+      <p>
+        The template must not use a final server name. Set a neutral template hostname:
+      </p>
+      <pre><code class="language-bash">hostnamectl set-hostname pve-template</code></pre>
+      <p>
+        After deployment each node gets its final name (<code>pve01</code>, <code>pve02</code>, …)
+        and <code>/etc/hosts</code> is updated accordingly.
+      </p>
+      <p>
+        The build image must <strong>not</strong> be joined to a Proxmox cluster. Do not configure
+        Corosync, the Proxmox cluster, Ceph, shared storage, or remote nodes in the template. The
+        cluster is created only after the servers are deployed.
+      </p>
+
+      <!-- B8 Clean the image -->
+      <h3>Clean the image</h3>
+      <p>
+        Before the final shutdown, remove all instance-specific data so the golden image stays
+        generic. Each deployed node then regenerates its own identity on first boot.
+      </p>
+      <p>
+        Remove the SSH host keys. They are regenerated automatically on the next boot, so every
+        deployed node gets a unique set:
+      </p>
+      <pre><code class="language-bash">rm -f /etc/ssh/ssh_host_*</code></pre>
+      <p>
+        Reset the machine ID so each node obtains its own identifier, and keep the D-Bus machine-id
+        pointing at it:
+      </p>
+      <pre><code class="language-bash">truncate -s 0 /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+ln -s /etc/machine-id /var/lib/dbus/machine-id</code></pre>
+      <p>
+        Clear any DHCP leases captured during the build:
+      </p>
+      <pre><code class="language-bash">rm -f /var/lib/dhcp/*</code></pre>
+      <p>
+        Rotate and vacuum the journal, then drop rotated log archives:
+      </p>
+      <pre><code class="language-bash">journalctl --rotate
+journalctl --vacuum-time=1s
+rm -f /var/log/*.gz</code></pre>
+      <p>
+        Finally, clean the APT package cache:
+      </p>
+      <pre><code class="language-bash">apt clean</code></pre>
+
+      <!-- B9 Shut down and remove the temporary VM -->
+      <h3>Shut down and remove the temporary VM</h3>
+      <p>
+        With the image cleaned, shut the build VM down cleanly so the filesystem is flushed and the
+        qcow2 disk is left in a consistent state:
+      </p>
+      <pre><code class="language-bash">shutdown -h now</code></pre>
+      <p>
+        Once the VM has stopped, <code>/var/lib/libvirt/images/proxmox-opcp.qcow2</code> is the
+        finished Proxmox system image. Remove the libvirt definition of the build VM without deleting
+        the qcow2 disk. Never pass any option that removes storage volumes, or you will destroy the
+        image you just built:
+      </p>
+      <pre><code class="language-bash">virsh undefine proxmox-image-builder --nvram</code></pre>
+
+      <!-- B10 Verify and compress the image -->
+      <h3>Verify and compress the image</h3>
+      <p>
+        Check the image integrity and inspect it so you know the qcow2 file is consistent and see its
+        size, format, and backing details:
+      </p>
+      <pre><code class="language-bash">qemu-img check /var/lib/libvirt/images/proxmox-opcp.qcow2
+qemu-img info /var/lib/libvirt/images/proxmox-opcp.qcow2</code></pre>
+      <p>
+        Optionally create a compressed copy for faster upload and more compact storage, then verify
+        the compressed result:
+      </p>
+      <pre><code class="language-bash">qemu-img convert -O qcow2 -c /var/lib/libvirt/images/proxmox-opcp.qcow2 /var/lib/libvirt/images/proxmox-opcp-final.qcow2
+qemu-img check /var/lib/libvirt/images/proxmox-opcp-final.qcow2</code></pre>
+
+      <!-- B11 Test the image -->
+      <h3>Test the image</h3>
+      <p>
+        Before importing the image into OPCP, boot the finalized image without the ISO attached to
+        confirm it boots on its own:
+      </p>
+      <pre><code class="language-bash">virt-install \
+  --name pve-test \
+  --memory 8192 \
+  --vcpus 4 \
+  --disk path=/var/lib/libvirt/images/proxmox-opcp-final.qcow2,format=qcow2 \
+  --import \
+  --boot uefi \
+  --network network=default,model=virtio</code></pre>
+      <p>
+        The system must boot directly, with no ISO required. A successful boot follows this chain:
+      </p>
+      <pre><code class="language-text">UEFI
+ |
+ v
+GRUB
+ |
+ v
+Debian Kernel
+ |
+ v
+Proxmox VE</code></pre>
+
+      <!-- B12 Import into OpenStack Glance -->
+      <h3>Import into OpenStack Glance</h3>
+      <p>
+        Import the finalized image into Glance so OPCP / Ironic can use it to provision bare-metal
+        servers:
+      </p>
+      <pre><code class="language-bash">openstack image create "Proxmox-VE-9-Baremetal" \
+  --disk-format qcow2 \
+  --container-format bare \
+  --file /var/lib/libvirt/images/proxmox-opcp-final.qcow2</code></pre>
+      <p>Verify the image was registered correctly:</p>
+      <pre><code class="language-bash">openstack image show Proxmox-VE-9-Baremetal</code></pre>
+      <p>The key properties should be as follows:</p>
+      <pre><code class="language-text">disk_format      = qcow2
+container_format = bare
+status           = active</code></pre>
+      <p>
+        The image must be used as a whole-disk image. Do <strong>not</strong> associate it with a
+        <code>kernel_id</code> or <code>ramdisk_id</code>.
+      </p>
+
+      <!-- B13 Bare-metal UEFI configuration and deployment -->
+      <h3>Bare-metal UEFI configuration and deployment</h3>
+      <p>
+        The target physical server must boot in UEFI mode. In Ironic, the node must use
+        <code>boot_mode:uefi</code>, and the server firmware must be set to UEFI boot.
+      </p>
+      <pre><code class="language-text">boot_mode:uefi</code></pre>
+      <pre><code class="language-bash">openstack baremetal node show &lt;UUID&gt;</code></pre>
+      <p>Deploy through OpenStack:</p>
+      <pre><code class="language-bash">openstack server create \
+  --flavor &lt;flavor-baremetal&gt; \
+  --image Proxmox-VE-9-Baremetal \
+  --network &lt;network-id&gt; \
+  pve01</code></pre>
+      <p>The deployment workflow proceeds as follows:</p>
+      <pre><code class="language-text">OpenStack
+    |
+    v
+Ironic
+    |
+    v
+Ironic Python Agent
+    |
+    v
+Download QCOW2 image
+    |
+    v
+Write image to physical disk
+    |
+    v
+Reboot
+    |
+    v
+UEFI
+    |
+    v
+Proxmox VE</code></pre>
+
+      <!-- B14 Post-deployment, recommendations and evolution -->
+      <h3>Post-deployment, recommendations and evolution</h3>
+      <p>
+        Once a node boots from the golden image, apply the node-specific configuration. Because the
+        same image serves many physical servers, these settings are what make each node unique:
+      </p>
+      <pre><code class="language-text">hostname
+management IP address
+DNS
+NTP
+vmbr0 bridge
+network bonds
+VLANs
+storage
+Proxmox cluster</code></pre>
+
+      <p>
+        <strong>Recommendations.</strong> Keep the golden image generic. Build in only what every
+        server shares, and leave anything server-specific for post-deployment.
+      </p>
+      <p>Include in the image:</p>
+      <ul>
+        <li>Proxmox VE</li>
+        <li>Debian</li>
+        <li>EFI partition</li>
+        <li>Bootloader</li>
+        <li>Standard packages</li>
+        <li>Common administration tools</li>
+      </ul>
+      <p>Do <strong>not</strong> include in the image:</p>
+      <ul>
+        <li>Final IP address</li>
+        <li>Final hostname</li>
+        <li>Hardware-dependent NIC configuration</li>
+        <li>Network bonds</li>
+        <li>Final bridges</li>
+        <li>Proxmox cluster</li>
+        <li>Corosync</li>
+        <li>Ceph</li>
+        <li>Data ZFS pool</li>
+        <li>Server-specific configuration</li>
+      </ul>
+      <p>
+        <strong>Recommended evolution.</strong> A first-boot configuration mechanism can further
+        automate deployment, applying the hostname, network, DNS, NTP, bridges, bonds, and storage
+        automatically on first boot. It can be implemented with:
+      </p>
+      <ul>
+        <li>cloud-init</li>
+        <li>A first-boot systemd script</li>
+        <li>Ansible</li>
+        <li>Terraform</li>
+        <li>An OPCP orchestration mechanism</li>
+      </ul>
 
       <button class="mark-complete-btn" type="button" aria-label="Mark this lesson as complete">
         ✓ Mark as Complete
