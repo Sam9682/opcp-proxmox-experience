@@ -225,5 +225,178 @@ def build_image(config: str, dry_run: bool) -> None:
         sys.exit(1)
 
 
+@main.group("local-build")
+def local_build() -> None:
+    """
+    Local KVM/libvirt Proxmox VE image build and OPCP deploy.
+
+    Provides a local-first build path alongside the remote ``build-image``
+    flow: check build-host prerequisites, run the full local build pipeline
+    (ISO staging, disk/VM creation, documented interactive install, cleaning,
+    finalization, boot test), and deploy the final image to OPCP (Glance
+    import, Ironic deploy, first-boot scaffolding).
+    """
+
+
+@local_build.command("check")
+@click.option(
+    "--config", "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to YAML configuration file for the local build.",
+)
+def local_build_check(config: str) -> None:
+    """
+    Check Local_Build_Host prerequisites.
+
+    Loads the YAML config, runs the prerequisite checks (OS family, required
+    packages, KVM acceleration, UEFI/OVMF firmware), prints the report, and
+    exits 0 when all prerequisites are satisfied, non-zero otherwise.
+    """
+    from .local_build import (
+        LocalCommandRunner,
+        PrerequisiteChecker,
+        load_local_build_config,
+    )
+
+    try:
+        # Load config (validates YAML structure); only the build config is used
+        # by the prerequisite checks, so the optional deploy section is ignored.
+        load_local_build_config(config)
+
+        report = PrerequisiteChecker(LocalCommandRunner()).check()
+
+        click.echo("Build-host prerequisite report:")
+        click.echo(f"  OS supported:     {report.os_supported}")
+        click.echo(
+            "  Missing packages: "
+            + (", ".join(report.missing_packages) or "none")
+        )
+        click.echo(f"  KVM available:    {report.kvm_available}")
+        click.echo(f"  UEFI available:   {report.uefi_available}")
+
+        if report.ok:
+            click.echo("✓ All prerequisites satisfied")
+            sys.exit(0)
+        else:
+            click.echo("✗ Prerequisites not satisfied", err=True)
+            sys.exit(1)
+
+    except ProxmoxAutomationError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@local_build.command("run")
+@click.option(
+    "--config", "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to YAML configuration file for the local build.",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Validate configuration and exit without building.",
+)
+def local_build_run(config: str, dry_run: bool) -> None:
+    """
+    Run the full local KVM/libvirt build pipeline.
+
+    Loads and validates the YAML config, then executes the build pipeline
+    (prerequisites, ISO staging, system disk, build VM, documented interactive
+    install, cleaning, finalization, boot test). Prints the resulting image
+    artifact and exits 0 on success, non-zero on failure. ``--dry-run``
+    validates the configuration and exits 0 without building.
+    """
+    from .local_build import (
+        LocalBuildConfigValidator,
+        LocalImageBuilder,
+        load_local_build_config,
+    )
+
+    try:
+        local_config, deploy_config = load_local_build_config(config)
+
+        validator = LocalBuildConfigValidator()
+        validator.validate(local_config, deploy_config)
+
+        if dry_run:
+            click.echo("Configuration valid")
+            sys.exit(0)
+
+        artifact = LocalImageBuilder().build(local_config)
+
+        click.echo("✓ Local image build completed")
+        click.echo(f"  Final image:      {artifact.final_image_path}")
+        click.echo(f"  Boot test passed: {artifact.boot_test_passed}")
+        sys.exit(0)
+
+    except ProxmoxAutomationError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@local_build.command("deploy")
+@click.option(
+    "--config", "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to YAML configuration file including a 'deploy' section.",
+)
+def local_build_deploy(config: str) -> None:
+    """
+    Deploy the final image to OPCP.
+
+    Loads and validates the YAML config (requires a ``deploy`` section), then
+    runs the deploy pipeline (Glance import, Ironic bare-metal deploy,
+    first-boot scaffolding). Prints the deploy result and exits 0 on success,
+    non-zero on failure.
+    """
+    from .local_build import (
+        LocalBuildConfigValidator,
+        LocalImageBuilder,
+        load_local_build_config,
+    )
+
+    try:
+        local_config, deploy_config = load_local_build_config(config)
+
+        if deploy_config is None:
+            click.echo(
+                "Error: configuration is missing a 'deploy' section",
+                err=True,
+            )
+            sys.exit(1)
+
+        validator = LocalBuildConfigValidator()
+        validator.validate(local_config, deploy_config)
+
+        result = LocalImageBuilder().deploy(deploy_config)
+
+        click.echo("✓ Deploy completed")
+        click.echo(f"  Glance image ID: {result.glance_image_id}")
+        click.echo(f"  Server ID:       {result.server_id}")
+        click.echo(
+            "  First-boot artifacts: "
+            + (", ".join(result.firstboot_artifacts) or "none")
+        )
+        sys.exit(0)
+
+    except ProxmoxAutomationError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
 if __name__ == "__main__":
     main()

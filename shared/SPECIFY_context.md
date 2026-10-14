@@ -9,6 +9,7 @@ APPLICATION CONTEXT:
 - Application Name: {{APPLICATION_NAME}}
 - Application Folder: {{APPLICATION_FOLDER}}
 - Repository URL: {{REPO_GITHUB_URL}}
+- Local build path: `proxmox_install_automation` also provides a local KVM/libvirt image build path in the `local_build` package, driven by the `local-build check`, `local-build run`, and `local-build deploy` subcommands. This is additive alongside the existing remote `build-image` flow. See `shared/LOCAL_BUILD_context.md` for the full documented procedure.
 
 INSTRUCTIONS:
 

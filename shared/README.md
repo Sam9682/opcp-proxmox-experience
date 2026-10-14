@@ -272,6 +272,19 @@ cd APPLICATION_FOLDER
 - Estimated impact (files and components affected)
 - Risk level (Low/Medium/High)
 
+## Operation 9: Local KVM/libvirt Proxmox Image Build and OPCP Deployment
+
+**Purpose**: Build a generic, reusable Proxmox VE qcow2 image on a local Debian/Ubuntu host and deploy it to bare-metal hardware on OPCP (OpenStack Glance + Ironic).
+
+**Overview**: The `local_build` package in `proxmox_install_automation` provides a local build path that stages the Proxmox ISO, creates a temporary build VM with virt-install, guides a documented interactive install, cleans and compresses the resulting disk, boot-tests it, imports it into Glance, deploys it to an Ironic bare-metal node, and scaffolds first-boot configuration. It is additive alongside the existing remote `build-image` flow, which is preserved unchanged.
+
+**Commands**:
+- `local-build check -c config.yaml` — verify build-host prerequisites.
+- `local-build run -c config.yaml` — run the full image build and produce the final image.
+- `local-build deploy -c config.yaml` — import into Glance, deploy via Ironic, and scaffold first boot.
+
+**Full procedure**: See [LOCAL_BUILD_context.md](./LOCAL_BUILD_context.md) for the step-by-step pipeline, interactive install steps, and the generic-image content policy.
+
 ## Additional Operations
 
 ### Check Status

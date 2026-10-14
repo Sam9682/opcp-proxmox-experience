@@ -48,6 +48,7 @@ export HTTPS_PORT2=$(($HTTP_PORT2+1))
    and implement the USER REQUEST in a minimal, clean and maintainable way.
    - Update only the necessary files.
    - Keep coding style consistent with the existing project.
+   - NOTE: `proxmox_install_automation` includes the `local_build` package (local KVM/libvirt image build path), exposed through the `local-build check`, `local-build run`, and `local-build deploy` subcommands. It is additive alongside the existing remote `build-image` flow, which must be preserved unchanged. See `shared/LOCAL_BUILD_context.md` for the documented procedure.
 #### 8. If there is a test suite (for example 'pytest', 'npm test', 'pnpm test', 'make test', etc.),
    try to detect it and run it.
    - If tests FAIL, revert the modifications or reset the branch to the previous state,
