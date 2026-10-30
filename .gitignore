@@ -40,6 +40,8 @@ coverage.xml
 *.swp
 *.swo
 *~
+.kiro/
+.shai/
 
 # OS
 .DS_Store
